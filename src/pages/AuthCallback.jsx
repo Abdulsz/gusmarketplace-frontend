@@ -13,14 +13,14 @@ export default function AuthCallback() {
         if (error) throw error;
         if (data.session) {
           setMessage('Email verified! Redirecting…');
-          setTimeout(()=> navigate('/app'), 800);
+          setTimeout(()=> navigate('/'), 800);
         } else {
           setMessage('Verified. Please log in.');
-          setTimeout(()=> navigate('/'), 1000);
+          setTimeout(()=> navigate('/login'), 1000);
         }
       } catch (e) {
         setMessage('Verification failed. Please log in.');
-        setTimeout(()=> navigate('/'), 1200);
+        setTimeout(()=> navigate('/login'), 1200);
       }
     }
     run();
