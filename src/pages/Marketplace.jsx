@@ -1,6 +1,7 @@
 import { Box, Button, Stack, Typography, Modal, TextField, FormControl, InputLabel, Select, MenuItem, Link, Alert } from '@mui/material';
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient';
+import { createListing } from '../api/gus';
 
 export default function Marketplace() {
   const [listings, setListings] = useState([])
@@ -9,7 +10,8 @@ export default function Marketplace() {
 
   const [listingTitle, setListingTitle] = useState("")
   const [listingDescription, setListingDescription] = useState("")
-  const [listingImageUrl, setListingImageUrl] = useState("")
+  const [listingImageFile, setListingImageFile] = useState(null)
+  const [listingImagePreview, setListingImagePreview] = useState(null)
   const [listingPrice, setListingPrice] = useState("")
   const [listingCondition, setListingCondition] = useState("")
   const [listingGroupMeLink, setListingGroupMeLink] = useState("")
@@ -22,7 +24,14 @@ export default function Marketplace() {
   const [submitError, setSubmitError] = useState('');
 
   const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  const handleClose = () => {
+    // Clean up image preview URL when closing modal
+    if (listingImagePreview) {
+      URL.revokeObjectURL(listingImagePreview);
+      setListingImagePreview(null);
+    }
+    setOpen(false);
+  };
 
   const handleListingDisplay = async () => {
     try{
@@ -56,25 +65,20 @@ export default function Marketplace() {
     try {
       setSubmitLoading(true);
       setSubmitError('');
-      const response = await fetch("http://localhost:8082/api/v1/gus/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
-        body: JSON.stringify({
-          userName: listingUserName,
-          category: listingCategory,
-          title: listingTitle,
-          description: listingDescription,
-          imgUrl: listingImageUrl,
-          price: listingPrice,
-          condition: listingCondition,
-          groupMeLink: listingGroupMeLink
-        }),
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || `HTTP error! status: ${response.status}`);
+      await createListing(accessToken, {
+        userName: listingUserName,
+        category: listingCategory,
+        title: listingTitle,
+        description: listingDescription,
+        price: listingPrice,
+        condition: listingCondition,
+        groupMeLink: listingGroupMeLink
+      }, listingImageFile);
+      // Clean up image preview URL
+      if (listingImagePreview) {
+        URL.revokeObjectURL(listingImagePreview);
       }
-      setListingUserName(""); setListingCategory(""); setListingTitle(""); setListingDescription(""); setListingImageUrl(""); setListingPrice(""); setListingCondition(""); setListingGroupMeLink("");
+      setListingUserName(""); setListingCategory(""); setListingTitle(""); setListingDescription(""); setListingImageFile(null); setListingImagePreview(null); setListingPrice(""); setListingCondition(""); setListingGroupMeLink("");
       handleClose();
       handleListingDisplay();
     } catch (error) {
@@ -84,20 +88,15 @@ export default function Marketplace() {
     finally { setSubmitLoading(false); }
   };
 
-  const handleImageUpload = async (event) => {
+  const handleImageSelect = (event) => {
     const file = event.target.files[0];
-    if (!file) return;
-    if (!accessToken) { alert('Please log in to upload an image.'); return; }
-    try {
-      const res = await fetch('http://localhost:8082/api/v1/gus/getUploadUrl', { headers: { "Authorization": `Bearer ${accessToken}` } });
-      if (!res.ok) throw new Error(`Failed to get upload URL: ${res.status}`);
-      const { uploadUrl, fileUrl } = await res.json();
-      const uploadRes = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': 'image/jpeg' }, body: file });
-      if (!uploadRes.ok) throw new Error(`Failed to upload file: ${uploadRes.status}`);
-      setListingImageUrl(fileUrl);
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      alert('Failed to upload image. Please try again.');
+    if (file) {
+      // Revoke previous object URL if it exists
+      if (listingImagePreview) {
+        URL.revokeObjectURL(listingImagePreview);
+      }
+      setListingImageFile(file);
+      setListingImagePreview(URL.createObjectURL(file));
     }
   };
 
@@ -154,14 +153,21 @@ export default function Marketplace() {
               </Select>
             </FormControl>
             <TextField label="GroupMe Link" value={listingGroupMeLink} onChange={(e) => setListingGroupMeLink(e.target.value)} fullWidth />
+            <Button variant="outlined" component="label" fullWidth sx={{ borderColor: '#1976d2', color: '#1976d2', '&:hover': { borderColor: '#1565c0', backgroundColor: 'rgba(25, 118, 210, 0.04)' } }}>
+              {listingImageFile ? `Selected: ${listingImageFile.name}` : 'Select Image'}
+              <input type="file" hidden accept="image/*" onChange={handleImageSelect} />
+            </Button>
+            {listingImagePreview && (
+              <Box sx={{ width: '100%', maxHeight: '200px', overflow: 'hidden', borderRadius: 1, border: '1px solid #e0e0e0' }}>
+                <img 
+                  src={listingImagePreview} 
+                  alt="Preview" 
+                  style={{ width: '100%', height: 'auto', display: 'block' }}
+                />
+              </Box>
+            )}
             {submitError && <Alert severity="error">{submitError}</Alert>}
-            <Stack direction="row" spacing={2}>
-              <Button variant="contained" component="label" sx={{ flex: 1, backgroundColor: '#1976d2', '&:hover': { backgroundColor: '#1565c0' } }}>
-                Upload Picture
-                <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
-              </Button>
-              <Button disabled={submitLoading} onClick={handleSubmit} variant="contained" sx={{ flex: 1, backgroundColor: '#1976d2', '&:hover': { backgroundColor: '#1565c0' } }}>{submitLoading ? 'Submitting…' : 'Submit'}</Button>
-            </Stack>
+            <Button disabled={submitLoading} onClick={handleSubmit} variant="contained" fullWidth sx={{ backgroundColor: '#1976d2', '&:hover': { backgroundColor: '#1565c0' } }}>{submitLoading ? 'Submitting…' : 'Submit'}</Button>
           </Stack>
         </Box>
       </Modal>
