@@ -191,10 +191,10 @@ export default function Marketplace() {
       setSubmitError('GroupMe link is required');
       return;
     }
-    // Validate GroupMe link format
-    const groupMePattern = /^(https?:\/\/(web\.)?groupme\.com\/join_group\/|groupme:\/\/join_group\/).+/;
+    // Validate GroupMe link format (supports both contact and join_group links)
+    const groupMePattern = /^(https?:\/\/(web\.)?groupme\.com\/(contact\/|join_group\/)|groupme:\/\/join_group\/).+/;
     if (!groupMePattern.test(listingSocialLink.trim())) {
-      setSubmitError('Invalid GroupMe link format. Please provide a valid GroupMe link (e.g., https://groupme.com/join_group/...).');
+      setSubmitError('Invalid GroupMe link format. Please provide a valid GroupMe link (e.g., https://groupme.com/contact/...).');
       return;
     }
     
@@ -495,8 +495,8 @@ export default function Marketplace() {
               onChange={(e) => setListingSocialLink(e.target.value)} 
               required
               fullWidth 
-              placeholder="https://groupme.com/join_group/..."
-              helperText="Required: Enter your GroupMe group join link"
+              placeholder="https://groupme.com/contact/000000/azAq9h4l"
+              helperText="Required: Enter your GroupMe contact link"
             />
             <Button variant="outlined" component="label" required fullWidth sx={{ borderColor: '#1976d2', color: '#1976d2', '&:hover': { borderColor: '#1565c0', backgroundColor: 'rgba(25, 118, 210, 0.04)' } }}>
               {listingImageFile ? `Selected: ${listingImageFile.name}` : 'Upload Picture *'}
