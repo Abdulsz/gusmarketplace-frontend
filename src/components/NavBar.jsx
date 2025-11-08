@@ -24,6 +24,7 @@ export default function NavBar() {
 
   const handleMyListingsClick = () => {
     if (!loggedIn) {
+      alert('Please log in to view your listings.');
       navigate('/login');
       return;
     }
@@ -34,6 +35,7 @@ export default function NavBar() {
 
   const handleAddListingClick = () => {
     if (!loggedIn) {
+      alert('Please log in to create a listing.');
       navigate('/login');
       return;
     }
@@ -106,7 +108,6 @@ export default function NavBar() {
               borderRadius: '6px',
               boxShadow: showMyListingsOnly ? '0 1px 3px rgba(0, 123, 255, 0.3)' : 'none',
               transition: 'all 0.2s ease',
-              whiteSpace: 'nowrap',
               '&:hover': { 
                 backgroundColor: showMyListingsOnly ? '#0056b3' : '#F5F5F5',
                 borderColor: showMyListingsOnly ? '#0056b3' : '#D0D0D0',
@@ -134,7 +135,6 @@ export default function NavBar() {
               borderRadius: '6px',
               boxShadow: '0 1px 3px rgba(0, 123, 255, 0.3)',
               transition: 'all 0.2s ease',
-              whiteSpace: 'nowrap',
               '&:hover': { 
                 backgroundColor: '#0056b3',
                 boxShadow: '0 2px 6px rgba(0, 123, 255, 0.4)',
