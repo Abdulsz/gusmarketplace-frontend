@@ -1,6 +1,6 @@
 # GUS Marketplace — Frontend
 
-GUS Marketplace is a modern e-commerce frontend built with React (TypeScript) that serves as the user-facing application for browsing, searching, and purchasing products in the GUS Marketplace ecosystem.
+GUS Marketplace is a modern e-commerce frontend built with NextJS that serves as the user-facing application for browsing, searching, and purchasing products in the GUS Marketplace ecosystem.
 
 This repository contains the frontend application responsible for:
 - Product listing and detail pages
