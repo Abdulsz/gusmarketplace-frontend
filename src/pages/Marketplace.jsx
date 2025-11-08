@@ -1,6 +1,7 @@
 import { Box, Button, Stack, Typography, Modal, TextField, FormControl, InputLabel, Select, MenuItem, Link, Alert, Menu, ListItemText } from '@mui/material';
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient';
+import { createListing } from '../api/gus';
 import { useMarketplace } from '../contexts/MarketplaceContext';
 
 export default function Marketplace() {
@@ -14,7 +15,8 @@ export default function Marketplace() {
 
   const [listingTitle, setListingTitle] = useState("")
   const [listingDescription, setListingDescription] = useState("")
-  const [listingImageUrl, setListingImageUrl] = useState("")
+  const [listingImageFile, setListingImageFile] = useState(null)
+  const [listingImagePreview, setListingImagePreview] = useState(null)
   const [listingPrice, setListingPrice] = useState("")
   const [listingCondition, setListingCondition] = useState("")
   const [listingSocialLink, setListingSocialLink] = useState("")
@@ -50,8 +52,14 @@ export default function Marketplace() {
     if (setOnAddListing) {
       setOnAddListing(() => handleOpen);
     }
-  }, [setOnAddListing, userEmail]);
+  }, [setOnAddListing, userEmail, session]);
+  
   const handleClose = () => {
+    // Clean up image preview URL when closing modal
+    if (listingImagePreview) {
+      URL.revokeObjectURL(listingImagePreview);
+      setListingImagePreview(null);
+    }
     setOpen(false);
     setSubmitError('');
     // Reset username to email when closing
@@ -167,7 +175,7 @@ export default function Marketplace() {
       setSubmitError('Price is required');
       return;
     }
-    if (!listingImageUrl || !listingImageUrl.trim()) {
+    if (!listingImageFile) {
       setSubmitError('Photo is required. Please upload an image.');
       return;
     }
@@ -183,35 +191,38 @@ export default function Marketplace() {
       setSubmitError('GroupMe link is required');
       return;
     }
-    // Validate GroupMe link format
-    const groupMePattern = /^(https?:\/\/(web\.)?groupme\.com\/join_group\/|groupme:\/\/join_group\/).+/;
+    // Validate GroupMe link format (supports both contact and join_group links)
+    const groupMePattern = /^(https?:\/\/(web\.)?groupme\.com\/(contact\/|join_group\/)|groupme:\/\/join_group\/).+/;
     if (!groupMePattern.test(listingSocialLink.trim())) {
-      setSubmitError('Invalid GroupMe link format. Please provide a valid GroupMe link (e.g., https://groupme.com/join_group/...).');
+      setSubmitError('Invalid GroupMe link format. Please provide a valid GroupMe link (e.g., https://groupme.com/contact/...).');
       return;
     }
     
     try {
       setSubmitLoading(true);
       setSubmitError('');
-      const response = await fetch("http://localhost:8082/api/v1/gus/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
-        body: JSON.stringify({
-          userName: listingUserName || userEmail,
-          category: listingCategory,
-          title: listingTitle,
-          description: listingDescription,
-          imgUrl: listingImageUrl,
-          price: listingPrice,
-          condition: listingCondition,
-          groupMeLink: listingSocialLink
-        }),
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || `HTTP error! status: ${response.status}`);
+      await createListing(accessToken, {
+        userName: listingUserName || userEmail,
+        category: listingCategory,
+        title: listingTitle,
+        description: listingDescription,
+        price: listingPrice,
+        condition: listingCondition,
+        groupMeLink: listingSocialLink
+      }, listingImageFile);
+      // Clean up image preview URL
+      if (listingImagePreview) {
+        URL.revokeObjectURL(listingImagePreview);
       }
-      setListingUserName(userEmail || ""); setListingCategory(""); setListingTitle(""); setListingDescription(""); setListingImageUrl(""); setListingPrice(""); setListingCondition(""); setListingSocialLink("");
+      setListingUserName(userEmail || ""); 
+      setListingCategory(""); 
+      setListingTitle(""); 
+      setListingDescription(""); 
+      setListingImageFile(null); 
+      setListingImagePreview(null); 
+      setListingPrice(""); 
+      setListingCondition(""); 
+      setListingSocialLink("");
       handleClose();
       handleListingDisplay();
     } catch (error) {
@@ -221,48 +232,19 @@ export default function Marketplace() {
     finally { setSubmitLoading(false); }
   };
 
-  const handleImageUpload = async (event) => {
+  const handleImageSelect = (event) => {
     const file = event.target.files[0];
     if (!file) return;
-    if (!accessToken) { alert('Please log in to upload an image.'); return; }
-    try {
-      const res = await fetch('http://localhost:8082/api/v1/gus/getUploadUrl', { 
-        headers: { "Authorization": `Bearer ${accessToken}` } 
-      });
-      
-      if (!res.ok) {
-        let errorText = '';
-        try {
-          const errorJson = await res.json();
-          errorText = errorJson.message || errorJson.error || JSON.stringify(errorJson);
-        } catch (e) {
-          errorText = await res.text();
-        }
-        console.error('Backend error response:', errorText);
-        throw new Error(`Failed to get upload URL (${res.status}): ${errorText}`);
-      }
-      
-      const { uploadUrl, fileUrl } = await res.json();
-      
-      const uploadRes = await fetch(uploadUrl, { 
-        method: 'PUT', 
-        headers: { 'Content-Type': file.type || 'image/jpeg' }, 
-        body: file 
-      });
-      
-      if (!uploadRes.ok) {
-        const errorText = await uploadRes.text();
-        console.error('S3 upload error:', errorText);
-        throw new Error(`Failed to upload file to S3 (${uploadRes.status}): ${errorText}`);
-      }
-      
-      setListingImageUrl(fileUrl);
-      alert('Image uploaded successfully!');
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      const errorMessage = error.message || 'Unknown error occurred';
-      alert(`Failed to upload image: ${errorMessage}`);
+    if (!accessToken) { 
+      alert('Please log in to upload an image.'); 
+      return; 
     }
+    // Revoke previous object URL if it exists
+    if (listingImagePreview) {
+      URL.revokeObjectURL(listingImagePreview);
+    }
+    setListingImageFile(file);
+    setListingImagePreview(URL.createObjectURL(file));
   };
 
   const handleDetailsOpen = (listing) => { setSelectedListing(listing); setDetailsOpen(true); };
@@ -513,64 +495,24 @@ export default function Marketplace() {
               onChange={(e) => setListingSocialLink(e.target.value)} 
               required
               fullWidth 
-              placeholder="https://groupme.com/join_group/..."
-              helperText="Required: Enter your GroupMe group join link"
+              placeholder="https://groupme.com/contact/000000/azAq9h4l"
+              helperText="Required: Enter your GroupMe contact link"
             />
+            <Button variant="outlined" component="label" required fullWidth sx={{ borderColor: '#1976d2', color: '#1976d2', '&:hover': { borderColor: '#1565c0', backgroundColor: 'rgba(25, 118, 210, 0.04)' } }}>
+              {listingImageFile ? `Selected: ${listingImageFile.name}` : 'Upload Picture *'}
+              <input type="file" hidden accept="image/*" onChange={handleImageSelect} required />
+            </Button>
+            {listingImagePreview && (
+              <Box sx={{ width: '100%', maxHeight: '200px', overflow: 'hidden', borderRadius: 1, border: '1px solid #e0e0e0' }}>
+                <img 
+                  src={listingImagePreview} 
+                  alt="Preview" 
+                  style={{ width: '100%', height: 'auto', display: 'block' }}
+                />
+              </Box>
+            )}
             {submitError && <Alert severity="error">{submitError}</Alert>}
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-              <Button 
-                variant="contained" 
-                component="label" 
-                required
-                sx={{ 
-                  flex: 1, 
-                  backgroundColor: listingImageUrl ? 'rgba(25, 118, 210, 0.9)' : 'rgba(25, 118, 210, 0.7)',
-                  backdropFilter: 'blur(10px)',
-                  color: '#fff',
-                  fontWeight: 600,
-                  borderRadius: '12px',
-                  py: { xs: 1.2, sm: 1.5 },
-                  fontSize: { xs: '0.875rem', sm: '1rem' },
-                  transition: 'all 0.3s ease',
-                  border: listingImageUrl ? 'none' : '2px dashed rgba(255, 255, 255, 0.5)',
-                  '&:hover': { 
-                    backgroundColor: '#1976d2',
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 8px 24px rgba(25, 118, 210, 0.4)',
-                  } 
-                }}
-              >
-                {listingImageUrl ? 'Change Picture' : 'Upload Picture *'}
-                <input type="file" hidden accept="image/*" onChange={handleImageUpload} required />
-              </Button>
-              <Button 
-                disabled={submitLoading} 
-                onClick={handleSubmit} 
-                variant="contained" 
-                sx={{ 
-                  flex: 1, 
-                  background: 'linear-gradient(135deg, #1976d2 0%, #00f2fe 100%)',
-                  color: '#fff',
-                  fontWeight: 700,
-                  borderRadius: '12px',
-                  py: { xs: 1.2, sm: 1.5 },
-                  fontSize: { xs: '0.875rem', sm: '1rem' },
-                  letterSpacing: '0.05em',
-                  textTransform: 'uppercase',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 16px rgba(25, 118, 210, 0.3)',
-                  '&:hover': { 
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 8px 24px rgba(25, 118, 210, 0.5)',
-                  },
-                  '&:disabled': {
-                    background: '#ccc',
-                  }
-                }}
-              >
-                {submitLoading ? 'Submitting...' : 'Submit'}
-              </Button>
-            </Stack>
+            <Button disabled={submitLoading} onClick={handleSubmit} variant="contained" fullWidth sx={{ backgroundColor: '#1976d2', '&:hover': { backgroundColor: '#1565c0' } }}>{submitLoading ? 'Submitting…' : 'Submit'}</Button>
           </Stack>
         </Box>
       </Modal>
