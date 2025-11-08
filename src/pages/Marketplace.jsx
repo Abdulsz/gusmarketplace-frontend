@@ -1,12 +1,10 @@
 import { Box, Button, Stack, Typography, Modal, TextField, FormControl, InputLabel, Select, MenuItem, Link, Alert, Menu, ListItemText } from '@mui/material';
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useMarketplace } from '../contexts/MarketplaceContext';
 
 export default function Marketplace() {
   const { showMyListingsOnly, setShowMyListingsOnly, setOnAddListing } = useMarketplace() || {};
-  const navigate = useNavigate();
   
   const [listings, setListings] = useState([])
   const [session, setSession] = useState(null)
@@ -41,7 +39,7 @@ export default function Marketplace() {
 
   const handleOpen = () => {
     if (!session) {
-      navigate('/login');
+      alert('Please log in to create a listing.');
       return;
     }
     setListingUserName(userEmail || '');
@@ -62,9 +60,8 @@ export default function Marketplace() {
 
   const handleListingDisplay = async () => {
     try{
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8082/api/v1/gus';
       const response = await fetch(
-        apiBaseUrl,
+        "http://localhost:8082/api/v1/gus",
         { method: "GET", headers:{ "Content-Type": "application/json" } }
       );
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -170,6 +167,10 @@ export default function Marketplace() {
       setSubmitError('Price is required');
       return;
     }
+    if (!listingImageUrl || !listingImageUrl.trim()) {
+      setSubmitError('Photo is required. Please upload an image.');
+      return;
+    }
     if (!listingCategory) {
       setSubmitError('Category is required');
       return;
@@ -178,25 +179,21 @@ export default function Marketplace() {
       setSubmitError('Condition is required');
       return;
     }
-    if (!listingImageUrl || !listingImageUrl.trim()) {
-      setSubmitError('Photo is required. Please upload an image before submitting.');
-      return;
-    }
     if (!listingSocialLink || !listingSocialLink.trim()) {
       setSubmitError('GroupMe link is required');
       return;
     }
-    // Validate GroupMe link - just check if "groupme" is in the text (case insensitive)
-    if (!listingSocialLink.trim().toLowerCase().includes('groupme')) {
-      setSubmitError('Please provide a valid GroupMe link.');
+    // Validate GroupMe link format
+    const groupMePattern = /^(https?:\/\/(web\.)?groupme\.com\/join_group\/|groupme:\/\/join_group\/).+/;
+    if (!groupMePattern.test(listingSocialLink.trim())) {
+      setSubmitError('Invalid GroupMe link format. Please provide a valid GroupMe link (e.g., https://groupme.com/join_group/...).');
       return;
     }
     
     try {
       setSubmitLoading(true);
       setSubmitError('');
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8082/api/v1/gus';
-      const response = await fetch(`${apiBaseUrl}/create`, {
+      const response = await fetch("http://localhost:8082/api/v1/gus/create", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
         body: JSON.stringify({
@@ -228,47 +225,43 @@ export default function Marketplace() {
     const file = event.target.files[0];
     if (!file) return;
     if (!accessToken) { alert('Please log in to upload an image.'); return; }
-    
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      alert('Please select a valid image file.');
-      return;
-    }
-    
-    // Check file size (limit to 10MB for mobile compatibility)
-    const maxSize = 10 * 1024 * 1024; // 10MB
-    if (file.size > maxSize) {
-      alert('Image file is too large. Please select an image smaller than 10MB.');
-      return;
-    }
-    
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8082/api/v1/gus';
-      const res = await fetch(`${apiBaseUrl}/getUploadUrl`, { headers: { "Authorization": `Bearer ${accessToken}` } });
-      if (!res.ok) throw new Error(`Failed to get upload URL: ${res.status}`);
-      const { uploadUrl, fileUrl } = await res.json();
+      const res = await fetch('http://localhost:8082/api/v1/gus/getUploadUrl', { 
+        headers: { "Authorization": `Bearer ${accessToken}` } 
+      });
       
-      // Use the file's actual MIME type instead of hardcoding image/jpeg
-      // This ensures compatibility with mobile formats (HEIC, PNG, WebP, etc.)
-      const contentType = file.type || 'image/jpeg';
+      if (!res.ok) {
+        let errorText = '';
+        try {
+          const errorJson = await res.json();
+          errorText = errorJson.message || errorJson.error || JSON.stringify(errorJson);
+        } catch (e) {
+          errorText = await res.text();
+        }
+        console.error('Backend error response:', errorText);
+        throw new Error(`Failed to get upload URL (${res.status}): ${errorText}`);
+      }
+      
+      const { uploadUrl, fileUrl } = await res.json();
       
       const uploadRes = await fetch(uploadUrl, { 
         method: 'PUT', 
-        headers: { 
-          'Content-Type': contentType
-        }, 
+        headers: { 'Content-Type': file.type || 'image/jpeg' }, 
         body: file 
       });
       
       if (!uploadRes.ok) {
-        const errorText = await uploadRes.text().catch(() => 'Unknown error');
-        throw new Error(`Failed to upload file: ${uploadRes.status} - ${errorText}`);
+        const errorText = await uploadRes.text();
+        console.error('S3 upload error:', errorText);
+        throw new Error(`Failed to upload file to S3 (${uploadRes.status}): ${errorText}`);
       }
       
       setListingImageUrl(fileUrl);
+      alert('Image uploaded successfully!');
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert(`Failed to upload image: ${error.message || 'Please try again.'}`);
+      const errorMessage = error.message || 'Unknown error occurred';
+      alert(`Failed to upload image: ${errorMessage}`);
     }
   };
 
@@ -278,8 +271,7 @@ export default function Marketplace() {
   const handleDelete = async (id) => {
     if (!accessToken) { alert('Please log in to delete your listing.'); return; }
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8082/api/v1/gus';
-      const res = await fetch(`${apiBaseUrl}/delete/${id}`, { method: 'POST', headers: { "Authorization": `Bearer ${accessToken}` } })
+      const res = await fetch(`http://localhost:8082/api/v1/gus/delete/${id}`, { method: 'POST', headers: { "Authorization": `Bearer ${accessToken}` } })
       if (!res.ok) throw new Error('Delete failed')
       handleListingDisplay()
     } catch (e) {
@@ -309,8 +301,7 @@ export default function Marketplace() {
 
     try {
       setSendingEmail(true);
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8082/api/v1/gus';
-      const response = await fetch(`${apiBaseUrl}/contact-seller/${selectedListing.id}`, {
+      const response = await fetch(`http://localhost:8082/api/v1/gus/contact-seller/${selectedListing.id}`, {
         method: 'POST',
         headers: { 
           "Content-Type": "application/json", 
@@ -523,22 +514,17 @@ export default function Marketplace() {
               required
               fullWidth 
               placeholder="https://groupme.com/join_group/..."
+              helperText="Required: Enter your GroupMe group join link"
             />
             {submitError && <Alert severity="error">{submitError}</Alert>}
-            {listingImageUrl && (
-              <Box sx={{ mb: 1 }}>
-                <Typography variant="body2" sx={{ color: 'success.main', fontWeight: 600 }}>
-                  ✓ Photo uploaded successfully
-                </Typography>
-              </Box>
-            )}
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <Button 
                 variant="contained" 
                 component="label" 
+                required
                 sx={{ 
                   flex: 1, 
-                  backgroundColor: listingImageUrl ? 'rgba(76, 175, 80, 0.9)' : 'rgba(25, 118, 210, 0.9)',
+                  backgroundColor: listingImageUrl ? 'rgba(25, 118, 210, 0.9)' : 'rgba(25, 118, 210, 0.7)',
                   backdropFilter: 'blur(10px)',
                   color: '#fff',
                   fontWeight: 600,
@@ -546,15 +532,16 @@ export default function Marketplace() {
                   py: { xs: 1.2, sm: 1.5 },
                   fontSize: { xs: '0.875rem', sm: '1rem' },
                   transition: 'all 0.3s ease',
+                  border: listingImageUrl ? 'none' : '2px dashed rgba(255, 255, 255, 0.5)',
                   '&:hover': { 
-                    backgroundColor: listingImageUrl ? 'rgba(76, 175, 80, 1)' : '#1976d2',
+                    backgroundColor: '#1976d2',
                     transform: 'translateY(-2px)',
                     boxShadow: '0 8px 24px rgba(25, 118, 210, 0.4)',
                   } 
                 }}
               >
-                {listingImageUrl ? '✓ Photo Uploaded' : 'Upload Picture'}
-                <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
+                {listingImageUrl ? 'Change Picture' : 'Upload Picture *'}
+                <input type="file" hidden accept="image/*" onChange={handleImageUpload} required />
               </Button>
               <Button 
                 disabled={submitLoading} 
@@ -581,7 +568,7 @@ export default function Marketplace() {
                   }
                 }}
               >
-                {submitLoading ? '⏳ Submitting…' : '✓ Submit'}
+                {submitLoading ? 'Submitting...' : 'Submit'}
               </Button>
             </Stack>
           </Stack>
