@@ -62,8 +62,9 @@ export default function Marketplace() {
 
   const handleListingDisplay = async () => {
     try{
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8082/api/v1/gus';
       const response = await fetch(
-        "http://localhost:8082/api/v1/gus",
+        apiBaseUrl,
         { method: "GET", headers:{ "Content-Type": "application/json" } }
       );
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -194,7 +195,8 @@ export default function Marketplace() {
     try {
       setSubmitLoading(true);
       setSubmitError('');
-      const response = await fetch("http://localhost:8082/api/v1/gus/create", {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8082/api/v1/gus';
+      const response = await fetch(`${apiBaseUrl}/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
         body: JSON.stringify({
@@ -241,7 +243,8 @@ export default function Marketplace() {
     }
     
     try {
-      const res = await fetch('http://localhost:8082/api/v1/gus/getUploadUrl', { headers: { "Authorization": `Bearer ${accessToken}` } });
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8082/api/v1/gus';
+      const res = await fetch(`${apiBaseUrl}/getUploadUrl`, { headers: { "Authorization": `Bearer ${accessToken}` } });
       if (!res.ok) throw new Error(`Failed to get upload URL: ${res.status}`);
       const { uploadUrl, fileUrl } = await res.json();
       
@@ -275,7 +278,8 @@ export default function Marketplace() {
   const handleDelete = async (id) => {
     if (!accessToken) { alert('Please log in to delete your listing.'); return; }
     try {
-      const res = await fetch(`http://localhost:8082/api/v1/gus/delete/${id}`, { method: 'POST', headers: { "Authorization": `Bearer ${accessToken}` } })
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8082/api/v1/gus';
+      const res = await fetch(`${apiBaseUrl}/delete/${id}`, { method: 'POST', headers: { "Authorization": `Bearer ${accessToken}` } })
       if (!res.ok) throw new Error('Delete failed')
       handleListingDisplay()
     } catch (e) {
@@ -305,7 +309,8 @@ export default function Marketplace() {
 
     try {
       setSendingEmail(true);
-      const response = await fetch(`http://localhost:8082/api/v1/gus/contact-seller/${selectedListing.id}`, {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8082/api/v1/gus';
+      const response = await fetch(`${apiBaseUrl}/contact-seller/${selectedListing.id}`, {
         method: 'POST',
         headers: { 
           "Content-Type": "application/json", 

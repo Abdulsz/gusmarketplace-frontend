@@ -1,4 +1,5 @@
-const BASE = 'http://localhost:8082/api/v1/gus';
+// Use environment variable for API base URL, fallback to localhost for development
+const BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8082/api/v1/gus';
 
 export async function getListings() {
   const res = await fetch(`${BASE}`);
