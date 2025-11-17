@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { Box, Button, TextField, ToggleButton, ToggleButtonGroup, Typography, Link } from '@mui/material';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function Auth({ onAuth }) {
   const [email, setEmail] = useState('');
@@ -24,7 +28,6 @@ export default function Auth({ onAuth }) {
         });
         
         if (error) {
-          // Check for duplicate email error - Supabase returns various error messages for existing users
           if (error.message.includes('already registered') || 
               error.message.includes('User already registered') ||
               error.message.includes('already exists') ||
@@ -56,133 +59,115 @@ export default function Auth({ onAuth }) {
   };
 
   return (
-    <Box sx={{ 
-      maxWidth: 420, 
-      mx: 'auto', 
-      mt: { xs: 2, sm: 4, md: 6 }, 
-      p: { xs: 2, sm: 3 }, 
-      borderRadius: 2, 
-      boxShadow: '0 6px 20px rgba(0,0,0,0.08)', 
-      bgcolor: '#fff',
-      width: { xs: '100%', sm: 'auto' }
-    }}>
-      <Typography 
-        variant="h5" 
-        sx={{ 
-          mb: { xs: 1.5, sm: 2 }, 
-          textAlign: 'center', 
-          fontWeight: 600,
-          fontSize: { xs: '1.25rem', sm: '1.5rem' }
-        }}
-      >
-        {mode === 'signup' ? 'Create your account' : mode === 'reset' ? 'Reset Password' : 'Welcome back'}
-      </Typography>
-      {mode !== 'reset' && (
-        <ToggleButtonGroup
-          color="primary"
-          value={mode}
-          exclusive
-          onChange={(_e, v) => {
-            if (v) {
-              setMode(v);
-              setMessage('');
-              setPassword('');
-            }
-          }}
-          fullWidth
-          sx={{ mb: 2 }}
-        >
-          <ToggleButton value="signin">Log In</ToggleButton>
-          <ToggleButton value="signup">Sign Up</ToggleButton>
-        </ToggleButtonGroup>
-      )}
-      <Box component="form" onSubmit={onSubmit} sx={{ display: 'grid', gap: 2 }}>
-        <TextField 
-          label="Email" 
-          type="email" 
-          value={email} 
-          onChange={(e)=>setEmail(e.target.value)} 
-          required
-          fullWidth 
-        />
+    <Card className="w-full max-w-md mx-auto shadow-lg">
+      <CardHeader className="space-y-1">
+        <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-[#002F6C] to-[#004080] bg-clip-text text-transparent">
+          {mode === 'signup' ? 'Create your account' : mode === 'reset' ? 'Reset Password' : 'Welcome back'}
+        </CardTitle>
+        <CardDescription className="text-center">
+          {mode === 'signup' ? 'Sign up to start selling' : mode === 'reset' ? 'Enter your email to reset password' : 'Sign in to your account'}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
         {mode !== 'reset' && (
-          <TextField 
-            label="Password" 
-            type="password" 
-            value={password} 
-            onChange={(e)=>setPassword(e.target.value)} 
-            required
-            fullWidth 
-          />
+          <div className="flex gap-2 mb-4">
+            <Button
+              type="button"
+              variant={mode === 'signin' ? 'default' : 'outline'}
+              className={`flex-1 ${mode === 'signin' ? '' : 'hover:bg-accent'}`}
+              onClick={() => {
+                setMode('signin');
+                setMessage('');
+                setPassword('');
+              }}
+            >
+              Log In
+            </Button>
+            <Button
+              type="button"
+              variant={mode === 'signup' ? 'default' : 'outline'}
+              className={`flex-1 ${mode === 'signup' ? '' : 'hover:bg-accent'}`}
+              onClick={() => {
+                setMode('signup');
+                setMessage('');
+                setPassword('');
+              }}
+            >
+              Sign Up
+            </Button>
+          </div>
         )}
-        {mode === 'reset' && (
-          <Button
-            variant="text"
-            onClick={() => {
-              setMode('signin');
-              setMessage('');
-              setPassword('');
-            }}
-            sx={{ textTransform: 'none', alignSelf: 'flex-start', color: '#1976d2' }}
-          >
-            ← Back to Sign In
-          </Button>
-        )}
-        <Button
-          disabled={loading}
-          type="submit"
-          variant="contained"
-          sx={{
-            py: 1.2,
-            textTransform: 'none',
-            fontWeight: 600,
-            bgcolor: '#1976d2',
-            '&:hover': { bgcolor: '#1565c0', transform: 'translateY(-1px)' },
-            transition: 'all .15s ease',
-          }}
-        >
-          {loading ? 'Please wait…' : (
-            mode === 'signup' ? 'Create account' : 
-            mode === 'reset' ? 'Send Reset Link' : 
-            'Log in'
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="Enter your email"
+            />
+          </div>
+          {mode !== 'reset' && (
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="Enter your password"
+              />
+            </div>
           )}
-        </Button>
-        {mode === 'signin' && (
-          <Link
-            component="button"
-            type="button"
-            onClick={() => {
-              setMode('reset');
-              setMessage('');
-              setPassword('');
-            }}
-            sx={{
-              textAlign: 'center',
-              textDecoration: 'none',
-              color: '#1976d2',
-              fontSize: '0.875rem',
-              '&:hover': { textDecoration: 'underline' },
-              cursor: 'pointer',
-            }}
+          {mode === 'reset' && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full text-primary"
+              onClick={() => {
+                setMode('signin');
+                setMessage('');
+                setPassword('');
+              }}
+            >
+              ← Back to Sign In
+            </Button>
+          )}
+          <Button
+            disabled={loading}
+            type="submit"
+            className="w-full bg-[#002F6C] hover:bg-[#004080] text-white"
           >
-            Forgot your password?
-          </Link>
+            {loading ? 'Please wait…' : (
+              mode === 'signup' ? 'Create account' : 
+              mode === 'reset' ? 'Send Reset Link' : 
+              'Log in'
+            )}
+          </Button>
+          {mode === 'signin' && (
+            <Button
+              type="button"
+              variant="link"
+              className="w-full text-primary"
+              onClick={() => {
+                setMode('reset');
+                setMessage('');
+                setPassword('');
+              }}
+            >
+              Forgot your password?
+            </Button>
+          )}
+        </form>
+        {message && (
+          <Alert variant={message.includes('successful') || message.includes('sent') ? 'default' : 'destructive'} className="mt-4">
+            <AlertDescription>{message}</AlertDescription>
+          </Alert>
         )}
-      </Box>
-      {message && (
-        <Typography 
-          variant="body2" 
-          sx={{ 
-            mt: 2, 
-            color: message.includes('successful') || message.includes('sent') ? '#2e7d32' : '#d32f2f',
-            textAlign: 'center'
-          }}
-        >
-          {message}
-        </Typography>
-      )}
-    </Box>
+      </CardContent>
+    </Card>
   );
 }
-
-

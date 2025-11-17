@@ -1,8 +1,14 @@
-import { Box, Button, Stack, Typography, Modal, TextField, FormControl, InputLabel, Select, MenuItem, Link, Alert, Menu, ListItemText } from '@mui/material';
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient';
 import { createListing } from '../api/gus';
 import { useMarketplace } from '../contexts/MarketplaceContext';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { X, Filter } from 'lucide-react';
 
 export default function Marketplace() {
   const { showMyListingsOnly, setShowMyListingsOnly, setOnAddListing } = useMarketplace() || {};
@@ -31,13 +37,7 @@ export default function Marketplace() {
   const [contactMessage, setContactMessage] = useState('');
   const [sendingEmail, setSendingEmail] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('');
-  const [priceSort, setPriceSort] = useState('none'); // 'none', 'high', 'low'
-  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
-  const [categoryAnchorEl, setCategoryAnchorEl] = useState(null);
-  const [priceAnchorEl, setPriceAnchorEl] = useState(null);
-  const filterOpen = Boolean(filterAnchorEl);
-  const categoryOpen = Boolean(categoryAnchorEl);
-  const priceOpen = Boolean(priceAnchorEl);
+  const [priceSort, setPriceSort] = useState('none');
 
   const handleOpen = () => {
     if (!session) {
@@ -55,14 +55,12 @@ export default function Marketplace() {
   }, [setOnAddListing, userEmail, session]);
   
   const handleClose = () => {
-    // Clean up image preview URL when closing modal
     if (listingImagePreview) {
       URL.revokeObjectURL(listingImagePreview);
       setListingImagePreview(null);
     }
     setOpen(false);
     setSubmitError('');
-    // Reset username to email when closing
     setListingUserName(userEmail || '');
   };
 
@@ -99,52 +97,39 @@ export default function Marketplace() {
     return () => { sub.subscription.unsubscribe() }
   },[]);
 
-  // Check if current user is admin
   const isAdmin = userEmail === 'mahatnitai@gmail.com';
   
-  // Check if listing belongs to current user
   const isListingOwner = (listingUserId) => {
     return listingUserId === userId;
   };
   
-  // Determine if delete button should be shown
   const shouldShowDeleteButton = (listing) => {
     if (!session) return false;
-    // Admin sees delete button on all listings
     if (isAdmin) return true;
-    // Regular users only see delete button on their own listings
     return isListingOwner(listing.userId);
   };
 
-  // Helper function to parse price string to number
   const parsePrice = (priceStr) => {
     if (!priceStr) return 0;
-    // Remove $ and any non-numeric characters except decimal point
     const cleaned = priceStr.toString().replace(/[^0-9.]/g, '');
     return parseFloat(cleaned) || 0;
   };
 
-  // Helper function to format price with dollar sign
   const formatPrice = (priceStr) => {
     if (!priceStr) return '$0';
-    // Remove any existing $ sign and format
     const cleaned = priceStr.toString().replace(/[^0-9.]/g, '');
     if (!cleaned) return '$0';
     return `$${cleaned}`;
   };
 
-  // Filter and sort listings
-  // Only show "My Listings" filter if user is logged in
   let filteredListings = (showMyListingsOnly && userId && session) 
     ? listings.filter(listing => isListingOwner(listing.userId))
     : listings;
 
-  // Apply category filter
   if (selectedCategory) {
     filteredListings = filteredListings.filter(listing => listing.category === selectedCategory);
   }
 
-  // Apply price sorting
   if (priceSort === 'high') {
     filteredListings = [...filteredListings].sort((a, b) => parsePrice(b.price) - parsePrice(a.price));
   } else if (priceSort === 'low') {
@@ -153,7 +138,6 @@ export default function Marketplace() {
 
   const handlePriceChange = (e) => {
     const value = e.target.value;
-    // Only allow numbers and decimal point
     if (value === '' || /^\d*\.?\d*$/.test(value)) {
       setListingPrice(value);
     }
@@ -162,7 +146,6 @@ export default function Marketplace() {
   const handleSubmit = async () => {
     if (!accessToken) { alert('Please log in to create a listing.'); return; }
     
-    // Validate required fields
     if (!listingTitle.trim()) {
       setSubmitError('Title is required');
       return;
@@ -191,7 +174,6 @@ export default function Marketplace() {
       setSubmitError('GroupMe link is required');
       return;
     }
-    // Validate GroupMe link format (supports both contact and join_group links)
     const groupMePattern = /^(https?:\/\/(web\.)?groupme\.com\/(contact\/|join_group\/)|groupme:\/\/join_group\/).+/;
     if (!groupMePattern.test(listingSocialLink.trim())) {
       setSubmitError('Invalid GroupMe link format. Please provide a valid GroupMe link (e.g., https://groupme.com/contact/...).');
@@ -210,7 +192,6 @@ export default function Marketplace() {
         condition: listingCondition,
         groupMeLink: listingSocialLink
       }, listingImageFile);
-      // Clean up image preview URL
       if (listingImagePreview) {
         URL.revokeObjectURL(listingImagePreview);
       }
@@ -239,7 +220,6 @@ export default function Marketplace() {
       alert('Please log in to upload an image.'); 
       return; 
     }
-    // Revoke previous object URL if it exists
     if (listingImagePreview) {
       URL.revokeObjectURL(listingImagePreview);
     }
@@ -266,7 +246,6 @@ export default function Marketplace() {
       alert('Please log in to contact the seller.');
       return;
     }
-    // Don't allow sellers to contact themselves
     if (selectedListing && selectedListing.userId === userId) {
       alert('You cannot contact yourself about your own listing.');
       return;
@@ -315,16 +294,13 @@ export default function Marketplace() {
       console.error("Error sending message:", error);
       let errorMessage = 'Failed to send message. Please try again.';
       if (error.message) {
-        // Parse JSON error if it's a JSON string
         try {
           const parsedError = JSON.parse(error.message);
           errorMessage = parsedError.error || parsedError.message || errorMessage;
         } catch (e) {
-          // Not JSON, use the message as-is
           errorMessage = error.message;
         }
         
-        // Provide user-friendly messages for common errors
         if (errorMessage.includes('Domain not verified') || errorMessage.includes('DNS')) {
           errorMessage = 'Email service is not fully configured. Please contact support.';
         } else if (errorMessage.includes('Authentication failed') || errorMessage.includes('401')) {
@@ -339,409 +315,251 @@ export default function Marketplace() {
     }
   };
 
-  const handleFilterClick = (event) => {
-    setFilterAnchorEl(event.currentTarget);
-  };
-
-  const handleFilterClose = () => {
-    setFilterAnchorEl(null);
-    setCategoryAnchorEl(null);
-    setPriceAnchorEl(null);
-  };
-
-  const handleCategoryClick = (event) => {
-    event.stopPropagation();
-    setPriceAnchorEl(null); // Close price menu if open
-    setCategoryAnchorEl(event.currentTarget);
-  };
-
-  const handleCategoryClose = () => {
-    setCategoryAnchorEl(null);
-  };
-
-  const handleCategorySelect = (category) => {
-    setSelectedCategory(category);
-    setPriceSort('none');
-    handleCategoryClose();
-    handleFilterClose();
-  };
-
-  const handlePriceClick = (event) => {
-    event.stopPropagation();
-    setCategoryAnchorEl(null); // Close category menu if open
-    setPriceAnchorEl(event.currentTarget);
-  };
-
-  const handlePriceClose = () => {
-    setPriceAnchorEl(null);
-  };
-
-  const handlePriceSort = (sort) => {
-    setPriceSort(sort);
-    setSelectedCategory('');
-    handlePriceClose();
-    handleFilterClose();
-  };
-
   return (
-    <Box sx={{ 
-      minHeight: '100vh', 
-      background: '#FFFFFF',
-      py: 4,
-      position: 'relative',
-    }}>
-      
-      <Box sx={{ maxWidth: '1400px', mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, position: 'relative', zIndex: 1 }}>
-
-      <Modal 
-        open={open} 
-        onClose={handleClose} 
-        aria-labelledby="modal-modal-title" 
-        aria-describedby="modal-modal-description"
-        sx={{
-          backdropFilter: 'blur(10px)',
-        }}
-      >
-        <Box sx={{ 
-          position: 'absolute', 
-          top: '50%', 
-          left: '50%', 
-          transform: 'translate(-50%, -50%)', 
-          width: { xs: '95%', sm: '90%', md: 500 }, 
-          maxWidth: '95vw',
-          maxHeight: { xs: '90vh', sm: '85vh' },
-          overflowY: 'auto',
-          bgcolor: 'rgba(255, 255, 255, 0.98)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: { xs: '16px', sm: '24px' }, 
-          boxShadow: '0 20px 60px rgba(25, 118, 210, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.5)',
-          p: { xs: 2.5, sm: 4 },
-          border: '1px solid rgba(25, 118, 210, 0.2)',
-        }}>
-          <Typography 
-            id="modal-modal-title" 
-            variant="h5" 
-            component="h2" 
-            sx={{ 
-              mb: { xs: 2, sm: 3 },
-              fontWeight: 700,
-              fontSize: { xs: '1.25rem', sm: '1.5rem' },
-              background: 'linear-gradient(135deg, #1976d2 0%, #00f2fe 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              textAlign: 'center',
-              letterSpacing: '0.05em'
-            }}
-          >
-            Create New Listing
-          </Typography>
-          <Stack spacing={2}>
-            <TextField 
-              label="Username" 
+    <div className="min-h-screen bg-white py-8 px-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Add Listing Dialog */}
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-0 shadow-xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold text-[#002F6C]">
+                Create New Listing
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="username">Username</Label>
+                <Input 
+                  id="username"
               value={listingUserName || userEmail} 
               disabled 
-              fullWidth 
-              helperText="Username is automatically set to your registered email"
-            />
-            <TextField 
-              label="Title" 
+                />
+                <p className="text-xs text-muted-foreground">Username is automatically set to your registered email</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="title">Title *</Label>
+                <Input 
+                  id="title"
               value={listingTitle} 
               onChange={(e) => setListingTitle(e.target.value)} 
               required 
-              fullWidth 
-            />
-            <TextField 
-              label="Description" 
+                  placeholder="Enter listing title"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description *</Label>
+                <textarea
+                  id="description"
               value={listingDescription} 
               onChange={(e) => setListingDescription(e.target.value)} 
-              multiline 
-              rows={3} 
               required 
-              fullWidth 
-              placeholder="add product desc or contact info"
-            />
-            <TextField 
-              label="Price" 
+                  rows={3}
+                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  placeholder="Add product description or contact info"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="price">Price *</Label>
+                <Input 
+                  id="price"
               value={listingPrice} 
               onChange={handlePriceChange} 
               required 
-              fullWidth 
-              inputProps={{ inputMode: 'numeric', pattern: '[0-9.]*' }}
-            />
-            <FormControl fullWidth required>
-              <InputLabel>Category</InputLabel>
-              <Select value={listingCategory} label="Category" onChange={(e) => setListingCategory(e.target.value)}>
-                <MenuItem value="Electronics">Electronics</MenuItem>
-                <MenuItem value="Furniture">Furniture</MenuItem>
-                <MenuItem value="Clothing">Clothing</MenuItem>
-                <MenuItem value="Books">Books</MenuItem>
-                <MenuItem value="Other">Other</MenuItem>
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="category">Category *</Label>
+                <Select value={listingCategory} onValueChange={setListingCategory}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Electronics">Electronics</SelectItem>
+                    <SelectItem value="Furniture">Furniture</SelectItem>
+                    <SelectItem value="Clothing">Clothing</SelectItem>
+                    <SelectItem value="Books">Books</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
               </Select>
-            </FormControl>
-            <FormControl fullWidth required>
-              <InputLabel>Condition</InputLabel>
-              <Select value={listingCondition} label="Condition" onChange={(e) => setListingCondition(e.target.value)}>
-                <MenuItem value="New">New</MenuItem>
-                <MenuItem value="Like New">Like New</MenuItem>
-                <MenuItem value="Good">Good</MenuItem>
-                <MenuItem value="Fair">Fair</MenuItem>
-                <MenuItem value="Poor">Poor</MenuItem>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="condition">Condition *</Label>
+                <Select value={listingCondition} onValueChange={setListingCondition}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select condition" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="New">New</SelectItem>
+                    <SelectItem value="Like New">Like New</SelectItem>
+                    <SelectItem value="Good">Good</SelectItem>
+                    <SelectItem value="Fair">Fair</SelectItem>
+                    <SelectItem value="Poor">Poor</SelectItem>
+                  </SelectContent>
               </Select>
-            </FormControl>
-            <TextField 
-              label="GroupMe Link" 
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="groupme">GroupMe Link *</Label>
+                <Input 
+                  id="groupme"
               value={listingSocialLink} 
               onChange={(e) => setListingSocialLink(e.target.value)} 
               required
-              fullWidth 
               placeholder="https://groupme.com/contact/000000/azAq9h4l"
-              helperText="Required: Enter your GroupMe contact link"
-            />
-            <Button variant="outlined" component="label" required fullWidth sx={{ borderColor: '#1976d2', color: '#1976d2', '&:hover': { borderColor: '#1565c0', backgroundColor: 'rgba(25, 118, 210, 0.04)' } }}>
-              {listingImageFile ? `Selected: ${listingImageFile.name}` : 'Upload Picture *'}
-              <input type="file" hidden accept="image/*" onChange={handleImageSelect} required />
-            </Button>
+                />
+                <p className="text-xs text-muted-foreground">Required: Enter your GroupMe contact link</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="image">Upload Picture *</Label>
+                <Input 
+                  id="image"
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleImageSelect} 
+                  required 
+                  className="cursor-pointer"
+                />
+                {listingImageFile && (
+                  <p className="text-xs text-muted-foreground">Selected: {listingImageFile.name}</p>
+                )}
+              </div>
             {listingImagePreview && (
-              <Box sx={{ width: '100%', maxHeight: '200px', overflow: 'hidden', borderRadius: 1, border: '1px solid #e0e0e0' }}>
+                <div className="w-full max-h-48 overflow-hidden rounded-md border">
                 <img 
                   src={listingImagePreview} 
                   alt="Preview" 
-                  style={{ width: '100%', height: 'auto', display: 'block' }}
-                />
-              </Box>
-            )}
-            {submitError && <Alert severity="error">{submitError}</Alert>}
-            <Button disabled={submitLoading} onClick={handleSubmit} variant="contained" fullWidth sx={{ backgroundColor: '#1976d2', '&:hover': { backgroundColor: '#1565c0' } }}>{submitLoading ? 'Submitting…' : 'Submit'}</Button>
-          </Stack>
-        </Box>
-      </Modal>
+                    className="w-full h-auto object-cover"
+                  />
+                </div>
+              )}
+              {submitError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-600">{submitError}</p>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={handleClose}>Cancel</Button>
+              <Button 
+                disabled={submitLoading} 
+                onClick={handleSubmit}
+                className="bg-[#002F6C] hover:bg-[#004080] text-white"
+              >
+                {submitLoading ? 'Submitting…' : 'Submit'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      <Modal 
-        open={detailsOpen} 
-        onClose={handleDetailsClose} 
-        aria-labelledby="details-modal-title" 
-        aria-describedby="details-modal-description"
-        sx={{
-          backdropFilter: 'blur(10px)',
-        }}
-      >
-        <Box sx={{ 
-          position: 'absolute', 
-          top: '50%', 
-          left: '50%', 
-          transform: 'translate(-50%, -50%)', 
-          width: { xs: '95%', sm: '90%', md: 650 }, 
-          maxWidth: '95vw',
-          maxHeight: '90vh', 
-          overflowY: 'auto',
-          bgcolor: 'rgba(255, 255, 255, 0.98)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: { xs: '16px', sm: '24px' }, 
-          boxShadow: '0 20px 60px rgba(25, 118, 210, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.5)',
-          p: { xs: 2.5, sm: 4 },
-          border: '1px solid rgba(25, 118, 210, 0.2)',
-        }}>
+        {/* Product Details Dialog */}
+        <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto border-0 shadow-xl">
           {selectedListing && (
             <>
-              <Typography 
-                id="details-modal-title" 
-                variant="h4" 
-                component="h2" 
-                sx={{ 
-                  mb: { xs: 2, sm: 3 },
-                  fontWeight: 700,
-                  fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.75rem' },
-                  background: 'linear-gradient(135deg, #1976d2 0%, #00f2fe 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                  letterSpacing: '0.02em',
-                  textTransform: 'capitalize'
-                }}
-              >
-                {selectedListing.title}
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box sx={{ width: '100%', height: { xs: '200px', sm: '300px' }, position: 'relative' }}>
-                  {selectedListing.imageUrl && (<img src={selectedListing.imageUrl} alt={selectedListing.title} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }} />)}
-                </Box>
-                <Stack spacing={2}>
+                <DialogHeader>
+                  <DialogTitle className="text-xl font-semibold text-[#002F6C] capitalize">
+                    {selectedListing.title}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="w-full h-64 md:h-96 relative rounded-lg overflow-hidden bg-muted">
+                    {selectedListing.imageUrl && (
+                      <img 
+                        src={selectedListing.imageUrl} 
+                        alt={selectedListing.title} 
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                  </div>
                   {session ? (
                     <>
-                  <Box>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Description</Typography>
-                    <Typography variant="body1">{selectedListing.description}</Typography>
-                  </Box>
+                      <div className="space-y-2">
+                        <h3 className="text-sm font-medium text-muted-foreground">Description</h3>
+                        <p className="text-sm">{selectedListing.description}</p>
+                      </div>
                       {selectedListing.userId !== userId && (
-                        <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                        <div className="flex flex-col sm:flex-row gap-2">
                   {selectedListing.groupMeLink && (
                             <Button
-                              variant="outlined"
+                              variant="outline"
+                              asChild
+                              className="bg-[#00AFF0] hover:bg-[#0099d6] text-white border-[#00AFF0]"
+                            >
+                              <a
                               href={selectedListing.groupMeLink}
                               target="_blank"
                               rel="noopener noreferrer"
-                              sx={{
-                                backgroundColor: '#00AFF0',
-                                color: '#fff',
-                                borderColor: '#00AFF0',
-                                fontWeight: 600,
-                                borderRadius: '12px',
-                                px: { xs: 2, sm: 3 },
-                                py: { xs: 1.2, sm: 1.5 },
-                                fontSize: { xs: '0.875rem', sm: '1rem' },
-                                '&:hover': {
-                                  backgroundColor: '#0099d6',
-                                  borderColor: '#0099d6',
-                                  transform: 'translateY(-2px)',
-                                  boxShadow: '0 4px 12px rgba(0, 175, 240, 0.4)',
-                                }
-                              }}
                             >
                               Contact via GroupMe
+                              </a>
                             </Button>
                           )}
                           <Button
-                            variant="contained"
                             onClick={handleContactSeller}
-                            sx={{
-                              backgroundColor: '#1976d2',
-                              color: '#fff',
-                              fontWeight: 600,
-                              borderRadius: '12px',
-                              px: { xs: 2, sm: 3 },
-                              py: { xs: 1.2, sm: 1.5 },
-                              fontSize: { xs: '0.875rem', sm: '1rem' },
-                              '&:hover': {
-                                backgroundColor: '#1565c0',
-                                transform: 'translateY(-2px)',
-                                boxShadow: '0 4px 12px rgba(25, 118, 210, 0.4)',
-                              }
-                            }}
+                            className="bg-[#002F6C] hover:bg-[#004080] text-white"
                           >
                             Contact via Email
                           </Button>
-                  </Box>
+                        </div>
                   )}
                     </>
                   ) : (
-                    <Box sx={{ 
-                      p: 3, 
-                      backgroundColor: 'rgba(25, 118, 210, 0.05)', 
-                      borderRadius: '12px',
-                      border: '1px solid rgba(25, 118, 210, 0.2)'
-                    }}>
-                      <Typography variant="body1" sx={{ color: '#1976d2', fontWeight: 600, mb: 1 }}>
-                        Login to Contact or Sell
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: '#666' }}>
-                        Please log in to view the description and contact the seller.
-                      </Typography>
-                    </Box>
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <p className="text-sm text-muted-foreground">
+                        <span className="font-medium text-foreground">Login required.</span> Please log in to view the description and contact the seller.
+                      </p>
+                    </div>
                   )}
-                  <Box sx={{ 
-                    display: 'flex', 
-                    flexDirection: { xs: 'column', sm: 'row' },
-                    justifyContent: 'space-between',
-                    gap: { xs: 1.5, sm: 0 }
-                  }}>
-                    <Box><Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: { xs: '0.875rem', sm: '1rem' } }}>Price</Typography><Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>{formatPrice(selectedListing.price)}</Typography></Box>
-                    <Box><Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: { xs: '0.875rem', sm: '1rem' } }}>Condition</Typography><Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>{selectedListing.condition}</Typography></Box>
-                    <Box><Typography variant="subtitle1" sx={{ fontWeight: 600, fontSize: { xs: '0.875rem', sm: '1rem' } }}>Category</Typography><Typography variant="body1" sx={{ fontSize: { xs: '0.875rem', sm: '1rem' } }}>{selectedListing.category}</Typography></Box>
-                  </Box>
-                </Stack>
-              </Box>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-border/50">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Price</p>
+                      <p className="text-base font-semibold text-[#002F6C]">{formatPrice(selectedListing.price)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Condition</p>
+                      <p className="text-sm">{selectedListing.condition}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">Category</p>
+                      <p className="text-sm">{selectedListing.category}</p>
+                    </div>
+                  </div>
+                </div>
             </>
           )}
-        </Box>
-      </Modal>
+          </DialogContent>
+        </Dialog>
 
-      {/* Contact Seller Message Modal */}
-      <Modal
-        open={contactMessageOpen}
-        onClose={() => {
-          setContactMessageOpen(false);
-          setContactMessage('');
-        }}
-        aria-labelledby="contact-modal-title"
-        aria-describedby="contact-modal-description"
-        sx={{
-          backdropFilter: 'blur(10px)',
-        }}
-      >
-        <Box sx={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          width: { xs: '95%', sm: '90%', md: 500 },
-          maxWidth: '95vw',
-          bgcolor: 'rgba(255, 255, 255, 0.98)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: { xs: '16px', sm: '24px' },
-          boxShadow: '0 20px 60px rgba(25, 118, 210, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.5)',
-          p: { xs: 2.5, sm: 4 },
-          border: '1px solid rgba(25, 118, 210, 0.2)',
-        }}>
-          <Typography
-            id="contact-modal-title"
-            variant="h5"
-            component="h2"
-            sx={{
-              mb: { xs: 2, sm: 3 },
-              fontWeight: 700,
-              fontSize: { xs: '1.25rem', sm: '1.5rem' },
-              background: 'linear-gradient(135deg, #1976d2 0%, #00f2fe 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              textAlign: 'center',
-              letterSpacing: '0.05em'
-            }}
-          >
-            Contact Seller
-          </Typography>
-          <Stack spacing={2}>
-            {selectedListing && (
-              <Box>
-                <Typography variant="body2" sx={{ color: '#666', mb: 1 }}>
-                  Sending message about: <strong>{selectedListing.title}</strong>
-                </Typography>
-              </Box>
-            )}
-            <TextField
-              label="Your Message"
+        {/* Contact Seller Dialog */}
+        <Dialog open={contactMessageOpen} onOpenChange={setContactMessageOpen}>
+          <DialogContent className="border-0 shadow-xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold text-[#002F6C]">
+                Contact Seller
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="message">Your Message</Label>
+                <textarea
+                  id="message"
               value={contactMessage}
               onChange={(e) => setContactMessage(e.target.value)}
-              multiline
               rows={5}
               required
-              fullWidth
+                  className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="Type your message to the seller here..."
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '12px',
-                }
-              }}
             />
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+              </div>
+            </div>
+            <DialogFooter>
               <Button
-                variant="outlined"
+                variant="outline" 
                 onClick={() => {
                   setContactMessageOpen(false);
                   setContactMessage('');
-                }}
-                sx={{
-                  flex: 1,
-                  borderRadius: '12px',
-                  py: { xs: 1.2, sm: 1.5 },
-                  fontSize: { xs: '0.875rem', sm: '1rem' },
-                  borderColor: '#999',
-                  color: '#666',
-                  '&:hover': {
-                    borderColor: '#666',
-                    backgroundColor: 'rgba(0, 0, 0, 0.05)',
-                  }
                 }}
               >
                 Cancel
@@ -749,362 +567,105 @@ export default function Marketplace() {
               <Button
                 disabled={sendingEmail || !contactMessage.trim()}
                 onClick={handleSendMessage}
-                variant="contained"
-                sx={{
-                  flex: 1,
-                  background: 'linear-gradient(135deg, #1976d2 0%, #00f2fe 100%)',
-                  color: '#fff',
-                  fontWeight: 700,
-                  borderRadius: '12px',
-                  py: { xs: 1.2, sm: 1.5 },
-                  fontSize: { xs: '0.875rem', sm: '1rem' },
-                  letterSpacing: '0.05em',
-                  textTransform: 'uppercase',
-                  transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 16px rgba(25, 118, 210, 0.3)',
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
-                    boxShadow: '0 8px 24px rgba(25, 118, 210, 0.5)',
-                  },
-                  '&:disabled': {
-                    background: '#ccc',
-                  }
-                }}
+                className="bg-[#002F6C] hover:bg-[#004080] text-white"
               >
                 {sendingEmail ? 'Sending...' : 'Send Message'}
               </Button>
-            </Stack>
-          </Stack>
-        </Box>
-      </Modal>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
       {/* Filter Section */}
-      <Box sx={{ 
-        mb: { xs: 2, sm: 3 }, 
-        display: 'flex', 
-        justifyContent: 'flex-end',
-        alignItems: 'center',
-        px: 0
-      }}>
-        <Button
-          onClick={handleFilterClick}
-          sx={{
-            borderRadius: '6px',
-            px: { xs: 2, sm: 3 },
-            py: { xs: 0.75, sm: 1 },
-            fontWeight: 500,
-            textTransform: 'none',
-            border: '1px solid #E0E0E0',
-            color: '#555',
-            backgroundColor: (selectedCategory || priceSort !== 'none') ? '#E0E0E0' : '#FFFFFF',
-            boxShadow: 'none',
-            fontSize: { xs: '0.75rem', sm: '0.875rem' },
-            fontFamily: '"Roboto", "Open Sans", sans-serif',
-            '&:hover': {
-              backgroundColor: '#F5F5F5',
-              borderColor: '#D0D0D0',
-              boxShadow: 'none',
-            }
-          }}
-        >
-          Filter{((selectedCategory || priceSort !== 'none') ? ' (Active)' : '')}
-        </Button>
-        
-        <Menu
-          anchorEl={filterAnchorEl}
-          open={filterOpen}
-          onClose={handleFilterClose}
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'left',
-          }}
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'left',
-          }}
-        >
-          <MenuItem 
-            onClick={handleCategoryClick}
-            onMouseEnter={(e) => {
-              setPriceAnchorEl(null); // Close price menu
-              setCategoryAnchorEl(e.currentTarget);
-            }}
-            onMouseLeave={(e) => {
-              // Only close if mouse is not moving to submenu
-              const relatedTarget = e.relatedTarget;
-              if (!relatedTarget || !relatedTarget.closest('.MuiMenu-list')) {
-                setTimeout(() => {
-                  if (!categoryOpen || !categoryAnchorEl?.contains(e.relatedTarget)) {
-                    // Will be handled by menu's onMouseLeave
-                  }
-                }, 50);
-              }
-            }}
-            sx={{
-              '&:hover': {
-                backgroundColor: 'rgba(0, 0, 0, 0.04)',
-              }
-            }}
-          >
-            <ListItemText primary="Category" />
-          </MenuItem>
-          <MenuItem 
-            onClick={handlePriceClick}
-            onMouseEnter={(e) => {
-              setCategoryAnchorEl(null); // Close category menu
-              setPriceAnchorEl(e.currentTarget);
-            }}
-            onMouseLeave={(e) => {
-              // Only close if mouse is not moving to submenu
-              const relatedTarget = e.relatedTarget;
-              if (!relatedTarget || !relatedTarget.closest('.MuiMenu-list')) {
-                setTimeout(() => {
-                  if (!priceOpen || !priceAnchorEl?.contains(e.relatedTarget)) {
-                    // Will be handled by menu's onMouseLeave
-                  }
-                }, 50);
-              }
-            }}
-            sx={{
-              '&:hover': {
-                backgroundColor: 'rgba(0, 0, 0, 0.04)',
-              }
-            }}
-          >
-            <ListItemText primary="Price" />
-          </MenuItem>
+        <div className="mb-8 flex justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="gap-2 text-muted-foreground hover:text-foreground">
+                <Filter className="h-4 w-4" />
           {(selectedCategory || priceSort !== 'none') && (
-            <MenuItem onClick={() => {
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#002F6C]"></span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={() => {
               setSelectedCategory('');
               setPriceSort('none');
-              handleFilterClose();
-            }}>
-              <ListItemText primary="Clear Filters" />
-            </MenuItem>
-          )}
-        </Menu>
+              }}>
+                Clear Filters
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => {
+                const categories = ['Electronics', 'Furniture', 'Clothing', 'Books', 'Other'];
+                const currentIndex = categories.indexOf(selectedCategory);
+                const nextCategory = currentIndex === -1 ? categories[0] : categories[(currentIndex + 1) % categories.length];
+                setSelectedCategory(nextCategory);
+                setPriceSort('none');
+              }}>
+                Category: {selectedCategory || 'All'}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                if (priceSort === 'none') setPriceSort('high');
+                else if (priceSort === 'high') setPriceSort('low');
+                else setPriceSort('none');
+                setSelectedCategory('');
+              }}>
+                Price: {priceSort === 'high' ? 'High to Low' : priceSort === 'low' ? 'Low to High' : 'None'}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
-        <Menu
-          anchorEl={categoryAnchorEl}
-          open={categoryOpen}
-          onClose={handleCategoryClose}
-          anchorOrigin={{
-            vertical: 'top',
-            horizontal: 'right',
-          }}
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'left',
-          }}
-          MenuListProps={{
-            onMouseLeave: (e) => {
-              // Close if mouse is not moving to parent menu item
-              const relatedTarget = e.relatedTarget;
-              if (!relatedTarget || !relatedTarget.closest('.MuiMenuItem-root')) {
-                handleCategoryClose();
-              }
-            },
-            onMouseEnter: () => {
-              // Keep menu open when hovering over it
-            }
-          }}
-          disableAutoFocusItem
-          TransitionProps={{
-            timeout: 150,
-          }}
-          sx={{
-            '& .MuiPaper-root': {
-              transition: 'opacity 150ms ease-in-out, transform 150ms ease-in-out',
-              marginLeft: '4px', // Small gap for smooth transition
-            }
-          }}
-        >
-          <MenuItem onClick={() => handleCategorySelect('')}>
-            <ListItemText primary="All Categories" />
-          </MenuItem>
-          <MenuItem onClick={() => handleCategorySelect('Electronics')}>
-            <ListItemText primary="Electronics" />
-          </MenuItem>
-          <MenuItem onClick={() => handleCategorySelect('Furniture')}>
-            <ListItemText primary="Furniture" />
-          </MenuItem>
-          <MenuItem onClick={() => handleCategorySelect('Clothing')}>
-            <ListItemText primary="Clothing" />
-          </MenuItem>
-          <MenuItem onClick={() => handleCategorySelect('Books')}>
-            <ListItemText primary="Books" />
-          </MenuItem>
-          <MenuItem onClick={() => handleCategorySelect('Other')}>
-            <ListItemText primary="Other" />
-          </MenuItem>
-        </Menu>
-
-        <Menu
-          anchorEl={priceAnchorEl}
-          open={priceOpen}
-          onClose={handlePriceClose}
-          anchorOrigin={{
-            vertical: 'top',
-            horizontal: 'right',
-          }}
-          transformOrigin={{
-            vertical: 'top',
-            horizontal: 'left',
-          }}
-          MenuListProps={{
-            onMouseLeave: (e) => {
-              // Close if mouse is not moving to parent menu item
-              const relatedTarget = e.relatedTarget;
-              if (!relatedTarget || !relatedTarget.closest('.MuiMenuItem-root')) {
-                handlePriceClose();
-              }
-            },
-            onMouseEnter: () => {
-              // Keep menu open when hovering over it
-            }
-          }}
-          disableAutoFocusItem
-          TransitionProps={{
-            timeout: 150,
-          }}
-          sx={{
-            '& .MuiPaper-root': {
-              transition: 'opacity 150ms ease-in-out, transform 150ms ease-in-out',
-              marginLeft: '4px', // Small gap for smooth transition
-            }
-          }}
-        >
-          <MenuItem onClick={() => handlePriceSort('high')}>
-            <ListItemText primary="High to Low" />
-          </MenuItem>
-          <MenuItem onClick={() => handlePriceSort('low')}>
-            <ListItemText primary="Low to High" />
-          </MenuItem>
-        </Menu>
-      </Box>
-
-      {/* Listings Grid - Depop Style */}
-      <Box 
-        sx={{ 
-          display: 'grid',
-          gridTemplateColumns: { 
-            xs: '1fr', 
-            sm: 'repeat(2, 1fr)', 
-            md: 'repeat(3, 1fr)', 
-            lg: 'repeat(4, 1fr)' 
-          },
-          gap: { xs: 3, sm: 2.5, md: 3 },
-          position: 'relative',
-          zIndex: 1,
-        }}
-      >
-        {filteredListings.map((listing) => (
-          <Box 
-            key={listing.id} 
-            onClick={() => handleDetailsOpen(listing)} 
-            sx={{ 
-              cursor: 'pointer',
-              position: 'relative',
-              '&:hover': { 
-                '& .listing-image': {
-                  opacity: 0.9,
-                },
-                '& .listing-card': {
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                }
-              }
-            }}
-          >
-            {/* Product Image */}
-            <Box 
-              className="listing-card"
-              sx={{ 
-              position: 'relative', 
-              overflow: 'hidden',
-                width: '100%',
-                aspectRatio: '1',
-                borderRadius: '8px',
-                backgroundColor: '#F5F5F5',
-                mb: 1,
-                transition: 'all 0.2s ease',
-              }}
+        {/* Listings Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+          {filteredListings.map((listing) => (
+            <div 
+              key={listing.id} 
+              className="cursor-pointer group"
+              onClick={() => handleDetailsOpen(listing)}
             >
-              {listing.imageUrl ? (
-                <img 
-                  src={listing.imageUrl} 
-                  alt={listing.title} 
-                  className="listing-image"
-                  style={{ 
-                    width: '100%', 
-                    height: '100%', 
-                    objectFit: 'cover',
-                    transition: 'opacity 0.2s ease',
-                  }} 
-                />
-              ) : (
-                <Box sx={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: '#F5F5F5',
-                  color: '#999',
-                  fontSize: '2rem'
-                }}>
-                  📦
-                </Box>
-              )}
-              {shouldShowDeleteButton(listing) && (
-                <Button 
-                  variant="contained"
-                  color="error" 
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation(); 
-                    handleDelete(listing.id);
-                  }} 
-                  sx={{ 
-                    position: 'absolute',
-                    top: 8,
-                    right: 8,
-                    minWidth: 'auto',
-                    width: '32px',
-                    height: '32px',
-                    borderRadius: '50%',
-                    backgroundColor: 'rgba(244, 67, 54, 0.9)',
-                    color: '#fff',
-                    padding: 0,
-                    '&:hover': {
-                      backgroundColor: '#f44336',
-                    }
-                  }}
-                >
-                  ×
-                </Button>
-              )}
-            </Box>
-            
-            {/* Price - Depop Style */}
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                fontFamily: '"Roboto", "Open Sans", sans-serif',
-                fontSize: { xs: '0.8125rem', sm: '0.875rem' },
-                color: '#333',
-                fontWeight: 500,
-                lineHeight: 1.4,
-              }}
-            >
-              {formatPrice(listing.price)}
-            </Typography>
-          </Box>
-        ))}
-      </Box>
-      </Box>
-      
-    </Box>
+              <div className="relative aspect-square overflow-hidden mb-2">
+                {listing.imageUrl ? (
+                  <img 
+                    src={listing.imageUrl} 
+                    alt={listing.title} 
+                    className="w-full h-full object-cover group-hover:opacity-90 transition-opacity duration-200"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-4xl bg-muted">
+                    📦
+                  </div>
+                )}
+                {shouldShowDeleteButton(listing) && (
+                  <Button 
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2 h-7 w-7 rounded-full bg-red-500/90 hover:bg-red-600 border-0"
+                    onClick={(e) => {
+                      e.stopPropagation(); 
+                      handleDelete(listing.id);
+                    }}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+              <div className="bg-transparent space-y-1">
+                <p className="text-sm font-medium text-foreground line-clamp-2">
+                  {listing.title}
+                </p>
+                <p className="font-medium text-base text-[#002F6C]">
+                  {formatPrice(listing.price)}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+        {filteredListings.length === 0 && (
+          <div className="text-center py-16">
+            <p className="text-muted-foreground text-sm">No listings found</p>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
-
-
