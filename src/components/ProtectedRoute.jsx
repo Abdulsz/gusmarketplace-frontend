@@ -1,10 +1,12 @@
+'use client';
 import { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { supabase } from '../lib/supabaseClient';
 
 export default function ProtectedRoute({ children }) {
   const [loading, setLoading] = useState(true);
   const [authed, setAuthed] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     let mounted = true;
@@ -20,8 +22,14 @@ export default function ProtectedRoute({ children }) {
     return () => { mounted = false; sub.subscription.unsubscribe(); };
   }, []);
 
+  useEffect(() => {
+    if (!loading && !authed) {
+      router.replace('/');
+    }
+  }, [loading, authed, router]);
+
   if (loading) return null;
-  if (!authed) return <Navigate to="/" replace />;
+  if (!authed) return null;
   return children;
 }
 

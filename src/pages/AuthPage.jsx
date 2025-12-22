@@ -1,80 +1,54 @@
+'use client';
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import Auth from '../components/Auth';
 import { supabase } from '../lib/supabaseClient';
-import { Box, Button, Typography } from '@mui/material';
+import { Button } from '@/components/ui/button';
 
 export default function AuthPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
-        navigate('/', { replace: true });
+        router.replace('/');
       }
     });
     
-    // Also listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
-        navigate('/', { replace: true });
+        router.replace('/');
       }
     });
     
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [router]);
 
   return (
-    <Box sx={{ px: { xs: 2, sm: 0 }, py: { xs: 2, sm: 4 } }}>
-      <Typography 
-        variant="h3" 
-        sx={{ 
-          textAlign: 'center', 
-          mb: { xs: 3, sm: 4 }, 
-          fontWeight: 700, 
-          color: '#1976d2',
-          fontSize: { xs: '1.75rem', sm: '2.125rem', md: '3rem' },
-          px: { xs: 2, sm: 0 }
-        }}
-      >
-        Welcome to Gus Marketplace
-      </Typography>
-      <Auth onAuth={() => navigate('/')} />
-      <Box sx={{ maxWidth: 420, mx: 'auto', mt: { xs: 2, sm: 3 }, textAlign: 'center', px: { xs: 2, sm: 0 } }}>
-        <Button
-          variant="outlined"
-          onClick={() => navigate('/')}
-          sx={{
-            minWidth: { xs: '100%', sm: '200px' },
-            py: { xs: 1, sm: 1.2 },
-            textTransform: 'none',
-            fontWeight: 600,
-            fontSize: { xs: '0.875rem', sm: '1rem' },
-            borderColor: '#1976d2',
-            color: '#1976d2',
-            '&:hover': { 
-              borderColor: '#1565c0',
-              backgroundColor: 'rgba(25, 118, 210, 0.08)',
-              transform: 'translateY(-1px)'
-            },
-            transition: 'all .15s ease',
-          }}
-        >
-          Browse as Guest
-        </Button>
-        <Typography 
-          variant="body2" 
-          sx={{ 
-            mt: 2, 
-            color: '#666',
-            fontSize: { xs: '0.75rem', sm: '0.875rem' }
-          }}
-        >
-          Continue without logging in to view listings
-        </Typography>
-      </Box>
-    </Box>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center px-4 py-8">
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-[#002F6C] to-[#004080] bg-clip-text text-transparent">
+            Welcome to Gus Marketplace
+          </h1>
+          <p className="text-muted-foreground">
+            Augustana College Marketplace
+          </p>
+        </div>
+        <Auth onAuth={() => router.push('/')} />
+        <div className="text-center space-y-2">
+          <Button
+            variant="outline"
+            onClick={() => router.push('/')}
+            className="w-full"
+          >
+            Browse as Guest
+          </Button>
+          <p className="text-sm text-muted-foreground">
+            Continue without logging in to view listings
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
-
-
