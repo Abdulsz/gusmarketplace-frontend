@@ -1,11 +1,12 @@
+'use client';
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '../lib/supabaseClient';
 import { Box, Button, TextField, Typography } from '@mui/material';
 
 export default function ResetPassword() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
@@ -43,7 +44,7 @@ export default function ResetPassword() {
       
       setMessage('Password reset successful! Redirecting to login...');
       setTimeout(() => {
-        navigate('/login');
+        router.push('/login');
       }, 2000);
     } catch (err) {
       setMessage(err.message ?? 'Failed to reset password. The link may have expired.');
@@ -91,7 +92,7 @@ export default function ResetPassword() {
         </Button>
         <Button
           variant="text"
-          onClick={() => navigate('/login')}
+          onClick={() => router.push('/login')}
           sx={{ textTransform: 'none', color: '#1976d2' }}
         >
           Back to Login

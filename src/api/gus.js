@@ -1,4 +1,5 @@
-const BASE = "http://localhost:8082/api/v1/gus";
+// Use Next.js API routes instead of direct backend calls
+const BASE = "/api/gus";
 
 export async function getListings() {
   const res = await fetch(`${BASE}`);
@@ -6,7 +7,8 @@ export async function getListings() {
   return res.json();
 }
 
-export async function createListing(token, payload, imageFile = null) {
+// NOTE: `token` is currently unused (MVP: UI-level auth only)
+export async function createListing(_token, payload, imageFile = null) {
   const formData = new FormData();
   formData.append("userName", payload.userName);
   formData.append("title", payload.title);
@@ -23,10 +25,7 @@ export async function createListing(token, payload, imageFile = null) {
 
   const res = await fetch(`${BASE}/create`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      // Don't set Content-Type - browser will set it with boundary for multipart/form-data
-    },
+    // Don't set Content-Type - browser will set it with boundary for multipart/form-data
     body: formData,
   });
 
@@ -38,12 +37,10 @@ export async function createListing(token, payload, imageFile = null) {
   return res.json();
 }
 
-export async function deleteListing(token, id) {
+// NOTE: `token` is currently unused (MVP: UI-level auth only)
+export async function deleteListing(_token, id) {
   const res = await fetch(`${BASE}/delete/${id}`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
   });
   if (!res.ok) throw new Error("Failed to delete listing");
 }

@@ -1,6 +1,7 @@
+'use client';
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient';
-import { createListing } from '../api/gus';
+import { getListings, createListing, deleteListing } from '../api/gus';
 import { useMarketplace } from '../contexts/MarketplaceContext';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -66,12 +67,7 @@ export default function Marketplace() {
 
   const handleListingDisplay = async () => {
     try{
-      const response = await fetch(
-        "http://localhost:8082/api/v1/gus",
-        { method: "GET", headers:{ "Content-Type": "application/json" } }
-      );
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const data = await response.json();
+      const data = await getListings();
       setListings(data);
     } catch (error) {
       console.error("Error fetching listings:", error);
@@ -233,8 +229,7 @@ export default function Marketplace() {
   const handleDelete = async (id) => {
     if (!accessToken) { alert('Please log in to delete your listing.'); return; }
     try {
-      const res = await fetch(`http://localhost:8082/api/v1/gus/delete/${id}`, { method: 'POST', headers: { "Authorization": `Bearer ${accessToken}` } })
-      if (!res.ok) throw new Error('Delete failed')
+      await deleteListing(accessToken, id);
       handleListingDisplay()
     } catch (e) {
       alert('Could not delete (only owners can delete).')
@@ -262,11 +257,10 @@ export default function Marketplace() {
 
     try {
       setSendingEmail(true);
-      const response = await fetch(`http://localhost:8082/api/v1/gus/contact-seller/${selectedListing.id}`, {
+      const response = await fetch(`/api/gus/contact-seller/${selectedListing.id}`, {
         method: 'POST',
         headers: { 
-          "Content-Type": "application/json", 
-          "Authorization": `Bearer ${accessToken}` 
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({
           buyerName: userEmail || 'Buyer',

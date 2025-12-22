@@ -1,27 +1,28 @@
+'use client';
 import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import Auth from '../components/Auth';
 import { supabase } from '../lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 
 export default function AuthPage() {
-  const navigate = useNavigate();
+  const router = useRouter();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
-        navigate('/', { replace: true });
+        router.replace('/');
       }
     });
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
-        navigate('/', { replace: true });
+        router.replace('/');
       }
     });
     
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [router]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center px-4 py-8">
@@ -34,11 +35,11 @@ export default function AuthPage() {
             Augustana College Marketplace
           </p>
         </div>
-        <Auth onAuth={() => navigate('/')} />
+        <Auth onAuth={() => router.push('/')} />
         <div className="text-center space-y-2">
           <Button
             variant="outline"
-            onClick={() => navigate('/')}
+            onClick={() => router.push('/')}
             className="w-full"
           >
             Browse as Guest

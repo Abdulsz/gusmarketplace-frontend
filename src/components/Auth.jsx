@@ -1,3 +1,4 @@
+'use client';
 import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Button } from '@/components/ui/button';
@@ -23,7 +24,7 @@ export default function Auth({ onAuth }) {
           email,
           password,
           options: {
-            emailRedirectTo: 'http://localhost:5173/auth/callback',
+            emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`,
           },
         });
         
@@ -42,7 +43,7 @@ export default function Auth({ onAuth }) {
         setMessage('Sign up successful. Check your email to verify your account.');
       } else if (mode === 'reset') {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: 'http://localhost:5173/auth/reset-password',
+          redirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/reset-password`,
         });
         if (error) throw error;
         setMessage('Password reset email sent! Please check your inbox and follow the instructions to reset your password.');

@@ -1,5 +1,6 @@
+'use client';
 import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '../lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { useMarketplace } from '../contexts/MarketplaceContext';
@@ -7,10 +8,10 @@ import { useMarketplace } from '../contexts/MarketplaceContext';
 export default function NavBar() {
   const { showMyListingsOnly, setShowMyListingsOnly, onAddListing } = useMarketplace() || {};
   const [loggedIn, setLoggedIn] = useState(false);
-  const location = useLocation();
-  const navigate = useNavigate();
-  const isMarketplacePage = location.pathname === '/';
-  const isLoginPage = location.pathname === '/login';
+  const pathname = usePathname();
+  const router = useRouter();
+  const isMarketplacePage = pathname === '/';
+  const isLoginPage = pathname === '/login';
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setLoggedIn(!!data.session));
@@ -25,7 +26,7 @@ export default function NavBar() {
   const handleMyListingsClick = () => {
     if (!loggedIn) {
       alert('Please log in to view your listings.');
-      navigate('/login');
+      router.push('/login');
       return;
     }
     if (setShowMyListingsOnly) {
@@ -36,7 +37,7 @@ export default function NavBar() {
   const handleAddListingClick = () => {
     if (!loggedIn) {
       alert('Please log in to create a listing.');
-      navigate('/login');
+      router.push('/login');
       return;
     }
     if (onAddListing) {
@@ -49,7 +50,7 @@ export default function NavBar() {
       {/* Logo on the left - hidden on login page */}
       {!isLoginPage && (
         <h1 
-          onClick={() => navigate('/')}
+          onClick={() => router.push('/')}
           className="text-lg sm:text-xl font-semibold text-[#002F6C] cursor-pointer hover:opacity-70 transition-opacity"
         >
           GUS MARKETPLACE
@@ -77,7 +78,7 @@ export default function NavBar() {
         )}
         {!loggedIn && !isLoginPage && (
           <Button 
-            onClick={() => navigate('/login')}
+            onClick={() => router.push('/login')}
             variant="ghost"
             className="text-sm text-muted-foreground hover:text-foreground"
           >

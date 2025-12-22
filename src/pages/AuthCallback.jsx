@@ -1,9 +1,10 @@
+'use client';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { supabase } from '../lib/supabaseClient';
 
 export default function AuthCallback() {
-  const navigate = useNavigate();
+  const router = useRouter();
   const [message, setMessage] = useState('Completing verification…');
 
   useEffect(() => {
@@ -13,18 +14,18 @@ export default function AuthCallback() {
         if (error) throw error;
         if (data.session) {
           setMessage('Email verified! Redirecting…');
-          setTimeout(()=> navigate('/'), 800);
+          setTimeout(()=> router.push('/'), 800);
         } else {
           setMessage('Verified. Please log in.');
-          setTimeout(()=> navigate('/login'), 1000);
+          setTimeout(()=> router.push('/login'), 1000);
         }
       } catch (e) {
         setMessage('Verification failed. Please log in.');
-        setTimeout(()=> navigate('/login'), 1200);
+        setTimeout(()=> router.push('/login'), 1200);
       }
     }
     run();
-  }, [navigate]);
+  }, [router]);
 
   return <p style={{textAlign:'center', marginTop: 40}}>{message}</p>
 }
