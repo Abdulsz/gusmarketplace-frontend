@@ -4,10 +4,12 @@ import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '../lib/supabaseClient';
 import { Button } from '@/components/ui/button';
 import { useMarketplace } from '../contexts/MarketplaceContext';
+import { useToast } from '@/components/ui/use-toast';
 
 export default function NavBar() {
   const { showMyListingsOnly, setShowMyListingsOnly, onAddListing } = useMarketplace() || {};
   const [loggedIn, setLoggedIn] = useState(false);
+  const { toast } = useToast();
   const pathname = usePathname();
   const router = useRouter();
   const isMarketplacePage = pathname === '/';
@@ -25,7 +27,11 @@ export default function NavBar() {
 
   const handleMyListingsClick = () => {
     if (!loggedIn) {
-      alert('Please log in to view your listings.');
+      toast({
+        title: "Authentication required",
+        description: "Please log in to view your listings.",
+        variant: "destructive",
+      });
       router.push('/login');
       return;
     }
@@ -36,7 +42,11 @@ export default function NavBar() {
 
   const handleAddListingClick = () => {
     if (!loggedIn) {
-      alert('Please log in to create a listing.');
+      toast({
+        title: "Authentication required",
+        description: "Please log in to create a listing.",
+        variant: "destructive",
+      });
       router.push('/login');
       return;
     }

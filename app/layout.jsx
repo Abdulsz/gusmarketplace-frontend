@@ -1,6 +1,9 @@
 import './globals.css';
 import NavBar from '@/components/NavBar';
 import { MarketplaceProvider } from '@/contexts/MarketplaceContext';
+import { Toaster } from '@/components/ui/toaster';
+import { Analytics } from '@vercel/analytics/next';
+
 
 export const metadata = {
   title: 'GUS Marketplace',
@@ -14,7 +17,9 @@ export default function RootLayout({ children }) {
         <MarketplaceProvider>
           <NavBar />
           {children}
+          <Toaster />
         </MarketplaceProvider>
+        <Analytics />
       </body>
     </html>
   );

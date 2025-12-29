@@ -60,34 +60,34 @@ export default function Auth({ onAuth }) {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto shadow-lg">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center bg-gradient-to-r from-[#002F6C] to-[#004080] bg-clip-text text-transparent">
-          {mode === 'signup' ? 'Create your account' : mode === 'reset' ? 'Reset Password' : 'Welcome back'}
+    <Card className="w-full max-w-md mx-auto shadow-lg border-border/50">
+      <CardHeader className="space-y-1 pb-4">
+        <CardTitle className="text-2xl font-semibold text-center text-[#002F6C]">
+          {mode === 'signup' ? 'Create Account' : mode === 'reset' ? 'Reset Password' : 'Welcome Back'}
         </CardTitle>
-        <CardDescription className="text-center">
-          {mode === 'signup' ? 'Sign up to start selling' : mode === 'reset' ? 'Enter your email to reset password' : 'Sign in to your account'}
+        <CardDescription className="text-center text-muted-foreground">
+          {mode === 'signup' ? 'Sign up to start buying and selling' : mode === 'reset' ? 'Enter your email to reset your password' : 'Sign in to your account'}
         </CardDescription>
       </CardHeader>
       <CardContent>
         {mode !== 'reset' && (
-          <div className="flex gap-2 mb-4">
+          <div className="flex gap-2 mb-6">
             <Button
               type="button"
               variant={mode === 'signin' ? 'default' : 'outline'}
-              className={`flex-1 ${mode === 'signin' ? '' : 'hover:bg-accent'}`}
+              className={`flex-1 ${mode === 'signin' ? 'bg-[#002F6C] hover:bg-[#004080]' : ''}`}
               onClick={() => {
                 setMode('signin');
                 setMessage('');
                 setPassword('');
               }}
             >
-              Log In
+              Sign In
             </Button>
             <Button
               type="button"
               variant={mode === 'signup' ? 'default' : 'outline'}
-              className={`flex-1 ${mode === 'signup' ? '' : 'hover:bg-accent'}`}
+              className={`flex-1 ${mode === 'signup' ? 'bg-[#002F6C] hover:bg-[#004080]' : ''}`}
               onClick={() => {
                 setMode('signup');
                 setMessage('');
@@ -123,36 +123,23 @@ export default function Auth({ onAuth }) {
               />
             </div>
           )}
-          {mode === 'reset' && (
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full text-primary"
-              onClick={() => {
-                setMode('signin');
-                setMessage('');
-                setPassword('');
-              }}
-            >
-              ← Back to Sign In
-            </Button>
-          )}
           <Button
             disabled={loading}
             type="submit"
             className="w-full bg-[#002F6C] hover:bg-[#004080] text-white"
           >
-            {loading ? 'Please wait…' : (
-              mode === 'signup' ? 'Create account' : 
+            {loading ? 'Please wait...' : (
+              mode === 'signup' ? 'Create Account' : 
               mode === 'reset' ? 'Send Reset Link' : 
-              'Log in'
+              'Sign In'
             )}
           </Button>
           {mode === 'signin' && (
             <Button
               type="button"
-              variant="link"
-              className="w-full text-primary"
+              variant="ghost"
+              size="sm"
+              className="w-full text-muted-foreground hover:text-foreground mt-2"
               onClick={() => {
                 setMode('reset');
                 setMessage('');
@@ -160,6 +147,21 @@ export default function Auth({ onAuth }) {
               }}
             >
               Forgot your password?
+            </Button>
+          )}
+          {mode === 'reset' && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="w-full text-muted-foreground hover:text-foreground mt-2"
+              onClick={() => {
+                setMode('signin');
+                setMessage('');
+                setPassword('');
+              }}
+            >
+              Back to Sign In
             </Button>
           )}
         </form>
