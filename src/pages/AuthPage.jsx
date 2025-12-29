@@ -25,28 +25,33 @@ export default function AuthPage() {
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md space-y-6">
+    <div className="min-h-screen bg-white flex items-center justify-center px-4 py-12">
+      <div className="w-full max-w-md space-y-8">
         <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-[#002F6C] to-[#004080] bg-clip-text text-transparent">
-            Welcome to Gus Marketplace
+          <h1 className="text-3xl font-semibold text-[#002F6C]">
+            GUS Marketplace
           </h1>
-          <p className="text-muted-foreground">
-            Augustana College Marketplace
+          <p className="text-sm text-muted-foreground">
+            Augustana College Student Marketplace
           </p>
         </div>
         <Auth onAuth={() => router.push('/')} />
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-3 pt-4">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border/50" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-muted-foreground">Or</span>
+            </div>
+          </div>
           <Button
-            variant="outline"
+            variant="ghost"
             onClick={() => router.push('/')}
-            className="w-full"
+            className="w-full text-muted-foreground hover:text-foreground"
           >
-            Browse as Guest
+            Continue as Guest
           </Button>
-          <p className="text-sm text-muted-foreground">
-            Continue without logging in to view listings
-          </p>
         </div>
       </div>
     </div>

@@ -7,14 +7,20 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { X, Filter } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { X, Filter, Package } from 'lucide-react';
 
 export default function Marketplace() {
   const { showMyListingsOnly, setShowMyListingsOnly, setOnAddListing } = useMarketplace() || {};
+  const { toast } = useToast();
   
   const [listings, setListings] = useState([])
+  const [loading, setLoading] = useState(true)
   const [session, setSession] = useState(null)
   const [accessToken, setAccessToken] = useState('')
   const [userEmail, setUserEmail] = useState('')
@@ -42,7 +48,11 @@ export default function Marketplace() {
 
   const handleOpen = () => {
     if (!session) {
-      alert('Please log in to create a listing.');
+      toast({
+        title: "Authentication required",
+        description: "Please log in to create a listing.",
+        variant: "destructive",
+      });
       return;
     }
     setListingUserName(userEmail || '');
@@ -67,10 +77,18 @@ export default function Marketplace() {
 
   const handleListingDisplay = async () => {
     try{
+      setLoading(true);
       const data = await getListings();
       setListings(data);
     } catch (error) {
       console.error("Error fetching listings:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch listings. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -140,7 +158,14 @@ export default function Marketplace() {
   };
 
   const handleSubmit = async () => {
-    if (!accessToken) { alert('Please log in to create a listing.'); return; }
+    if (!accessToken) { 
+      toast({
+        title: "Authentication required",
+        description: "Please log in to create a listing.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     if (!listingTitle.trim()) {
       setSubmitError('Title is required');
@@ -202,9 +227,18 @@ export default function Marketplace() {
       setListingSocialLink("");
       handleClose();
       handleListingDisplay();
+      toast({
+        title: "Success",
+        description: "Your listing has been created successfully.",
+      });
     } catch (error) {
       console.error("Error creating listing:", error);
       setSubmitError(error.message || 'Failed to create listing');
+      toast({
+        title: "Error",
+        description: error.message || 'Failed to create listing',
+        variant: "destructive",
+      });
     }
     finally { setSubmitLoading(false); }
   };
@@ -213,7 +247,11 @@ export default function Marketplace() {
     const file = event.target.files[0];
     if (!file) return;
     if (!accessToken) { 
-      alert('Please log in to upload an image.'); 
+      toast({
+        title: "Authentication required",
+        description: "Please log in to upload an image.",
+        variant: "destructive",
+      });
       return; 
     }
     if (listingImagePreview) {
@@ -227,22 +265,45 @@ export default function Marketplace() {
   const handleDetailsClose = () => { setDetailsOpen(false); setSelectedListing(null); };
 
   const handleDelete = async (id) => {
-    if (!accessToken) { alert('Please log in to delete your listing.'); return; }
+    if (!accessToken) { 
+      toast({
+        title: "Authentication required",
+        description: "Please log in to delete your listing.",
+        variant: "destructive",
+      });
+      return;
+    }
     try {
       await deleteListing(accessToken, id);
-      handleListingDisplay()
+      handleListingDisplay();
+      toast({
+        title: "Success",
+        description: "Listing deleted successfully.",
+      });
     } catch (e) {
-      alert('Could not delete (only owners can delete).')
+      toast({
+        title: "Error",
+        description: "Could not delete listing. Only owners can delete their listings.",
+        variant: "destructive",
+      });
     }
   }
 
   const handleContactSeller = () => {
     if (!session) {
-      alert('Please log in to contact the seller.');
+      toast({
+        title: "Authentication required",
+        description: "Please log in to contact the seller.",
+        variant: "destructive",
+      });
       return;
     }
     if (selectedListing && selectedListing.userId === userId) {
-      alert('You cannot contact yourself about your own listing.');
+      toast({
+        title: "Not allowed",
+        description: "You cannot contact yourself about your own listing.",
+        variant: "destructive",
+      });
       return;
     }
     setContactMessageOpen(true);
@@ -250,7 +311,11 @@ export default function Marketplace() {
 
   const handleSendMessage = async () => {
     if (!contactMessage.trim()) {
-      alert('Please enter a message.');
+      toast({
+        title: "Message required",
+        description: "Please enter a message.",
+        variant: "destructive",
+      });
       return;
     }
     if (!accessToken || !selectedListing) return;
@@ -281,7 +346,10 @@ export default function Marketplace() {
       }
 
       const result = await response.json();
-      alert('Message sent successfully! The seller will receive an email.');
+      toast({
+        title: "Success",
+        description: "Message sent successfully! The seller will receive an email.",
+      });
       setContactMessage('');
       setContactMessageOpen(false);
     } catch (error) {
@@ -303,7 +371,11 @@ export default function Marketplace() {
           errorMessage = 'Domain not verified. Please verify DNS settings.';
         }
       }
-      alert(errorMessage);
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setSendingEmail(false);
     }
@@ -342,13 +414,12 @@ export default function Marketplace() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Description *</Label>
-                <textarea
+                <Textarea
                   id="description"
               value={listingDescription} 
               onChange={(e) => setListingDescription(e.target.value)} 
               required 
                   rows={3}
-                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   placeholder="Add product description or contact info"
                 />
               </div>
@@ -537,13 +608,12 @@ export default function Marketplace() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="message">Your Message</Label>
-                <textarea
+                <Textarea
                   id="message"
               value={contactMessage}
               onChange={(e) => setContactMessage(e.target.value)}
               rows={5}
               required
-                  className="flex min-h-[120px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               placeholder="Type your message to the seller here..."
             />
               </div>
@@ -570,14 +640,26 @@ export default function Marketplace() {
         </Dialog>
 
       {/* Filter Section */}
-        <div className="mb-8 flex justify-end">
+        <div className="mb-8 flex justify-between items-center">
+          <div className="flex gap-2 flex-wrap">
+            {selectedCategory && (
+              <Badge variant="secondary" className="gap-1">
+                {selectedCategory}
+                <X className="h-3 w-3 cursor-pointer" onClick={() => setSelectedCategory('')} />
+              </Badge>
+            )}
+            {priceSort !== 'none' && (
+              <Badge variant="secondary" className="gap-1">
+                {priceSort === 'high' ? 'Price: High to Low' : 'Price: Low to High'}
+                <X className="h-3 w-3 cursor-pointer" onClick={() => setPriceSort('none')} />
+              </Badge>
+            )}
+          </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="gap-2 text-muted-foreground hover:text-foreground">
+              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
                 <Filter className="h-4 w-4" />
-          {(selectedCategory || priceSort !== 'none') && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-[#002F6C]"></span>
-                )}
+                Filter
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -585,7 +667,7 @@ export default function Marketplace() {
               setSelectedCategory('');
               setPriceSort('none');
               }}>
-                Clear Filters
+                Clear All Filters
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => {
@@ -593,7 +675,6 @@ export default function Marketplace() {
                 const currentIndex = categories.indexOf(selectedCategory);
                 const nextCategory = currentIndex === -1 ? categories[0] : categories[(currentIndex + 1) % categories.length];
                 setSelectedCategory(nextCategory);
-                setPriceSort('none');
               }}>
                 Category: {selectedCategory || 'All'}
               </DropdownMenuItem>
@@ -601,7 +682,6 @@ export default function Marketplace() {
                 if (priceSort === 'none') setPriceSort('high');
                 else if (priceSort === 'high') setPriceSort('low');
                 else setPriceSort('none');
-                setSelectedCategory('');
               }}>
                 Price: {priceSort === 'high' ? 'High to Low' : priceSort === 'low' ? 'Low to High' : 'None'}
               </DropdownMenuItem>
@@ -610,53 +690,81 @@ export default function Marketplace() {
         </div>
 
         {/* Listings Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-          {filteredListings.map((listing) => (
-            <div 
-              key={listing.id} 
-              className="cursor-pointer group"
-              onClick={() => handleDetailsOpen(listing)}
-            >
-              <div className="relative aspect-square overflow-hidden mb-2">
-                {listing.imageUrl ? (
-                  <img 
-                    src={listing.imageUrl} 
-                    alt={listing.title} 
-                    className="w-full h-full object-cover group-hover:opacity-90 transition-opacity duration-200"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-4xl bg-muted">
-                    📦
-                  </div>
-                )}
-                {shouldShowDeleteButton(listing) && (
-                  <Button 
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-2 right-2 h-7 w-7 rounded-full bg-red-500/90 hover:bg-red-600 border-0"
-                    onClick={(e) => {
-                      e.stopPropagation(); 
-                      handleDelete(listing.id);
-                    }}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
-                )}
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="aspect-square w-full" />
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-4 w-1/2" />
               </div>
-              <div className="bg-transparent space-y-1">
-                <p className="text-sm font-medium text-foreground line-clamp-2">
-                  {listing.title}
-                </p>
-                <p className="font-medium text-base text-[#002F6C]">
-                  {formatPrice(listing.price)}
-                </p>
+            ))}
+          </div>
+        ) : filteredListings.length === 0 ? (
+          <div className="text-center py-24">
+            <div className="flex justify-center mb-4">
+              <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
+                <Package className="h-8 w-8 text-muted-foreground" />
               </div>
             </div>
-          ))}
-        </div>
-        {filteredListings.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground text-sm">No listings found</p>
+            <h3 className="text-lg font-medium mb-1">No listings found</h3>
+            <p className="text-sm text-muted-foreground mb-6">
+              {showMyListingsOnly 
+                ? "You haven't created any listings yet." 
+                : selectedCategory || priceSort !== 'none'
+                ? "Try adjusting your filters."
+                : "Be the first to create a listing!"}
+            </p>
+            {session && !showMyListingsOnly && (
+              <Button onClick={handleOpen} className="bg-[#002F6C] hover:bg-[#004080]">
+                Create Your First Listing
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            {filteredListings.map((listing) => (
+              <div 
+                key={listing.id} 
+                className="cursor-pointer group"
+                onClick={() => handleDetailsOpen(listing)}
+              >
+                <div className="relative aspect-square overflow-hidden mb-2 rounded-lg border border-border/50">
+                  {listing.imageUrl ? (
+                    <img 
+                      src={listing.imageUrl} 
+                      alt={listing.title} 
+                      className="w-full h-full object-cover group-hover:opacity-90 transition-opacity duration-200"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-muted">
+                      <Package className="h-12 w-12 text-muted-foreground" />
+                    </div>
+                  )}
+                  {shouldShowDeleteButton(listing) && (
+                    <Button 
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 right-2 h-7 w-7 rounded-full bg-red-500/90 hover:bg-red-600 border-0"
+                      onClick={(e) => {
+                        e.stopPropagation(); 
+                        handleDelete(listing.id);
+                      }}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
+                <div className="bg-transparent space-y-1">
+                  <p className="text-sm font-medium text-foreground line-clamp-2">
+                    {listing.title}
+                  </p>
+                  <p className="font-medium text-base text-[#002F6C]">
+                    {formatPrice(listing.price)}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
