@@ -3,6 +3,9 @@ import { NextResponse } from "next/server";
 const BACKEND_URL = process.env.BACKEND_URL;
 const API_KEY = process.env.BACKEND_API_KEY;
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 // GET /api/gus - Fetch all listings
 export async function GET() {
   try {
