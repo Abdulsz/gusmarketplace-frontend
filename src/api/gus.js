@@ -2,7 +2,9 @@
 const BASE = "/api/gus";
 
 export async function getListings() {
-  const res = await fetch(`${BASE}`);
+  const res = await fetch(`${BASE}`, {
+    cache: "no-store", // Disable caching to always get fresh data
+  });
   if (!res.ok) throw new Error("Failed to fetch listings");
   return res.json();
 }
@@ -10,7 +12,7 @@ export async function getListings() {
 // NOTE: `token` is currently unused (MVP: UI-level auth only)
 export async function createListing(_token, payload, imageFile = null) {
   const formData = new FormData();
-  formData.append("userName", payload.userName);
+  formData.append("userName", payload.userName); // Email used for ownership tracking
   formData.append("title", payload.title);
   formData.append("description", payload.description);
   formData.append("category", payload.category);

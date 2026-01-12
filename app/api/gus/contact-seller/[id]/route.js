@@ -6,7 +6,7 @@ const API_KEY = process.env.BACKEND_API_KEY;
 // POST /api/gus/contact-seller/[id] - Contact seller
 export async function POST(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     const response = await fetch(

@@ -6,7 +6,7 @@ const API_KEY = process.env.BACKEND_API_KEY;
 // POST /api/gus/delete/[id] - Delete a listing
 export async function POST(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
 
     const response = await fetch(`${BACKEND_URL}/api/v1/gus/delete/${id}`, {
       method: "POST",
