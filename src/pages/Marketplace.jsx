@@ -113,14 +113,14 @@ export default function Marketplace() {
 
   const isAdmin = userEmail === 'mahatnitai@gmail.com';
   
-  const isListingOwner = (listingUserId) => {
-    return listingUserId === userId;
+  const isListingOwner = (listingUserName) => {
+    return listingUserName === userEmail;
   };
   
   const shouldShowDeleteButton = (listing) => {
     if (!session) return false;
     if (isAdmin) return true;
-    return isListingOwner(listing.userId);
+    return isListingOwner(listing.userName);
   };
 
   const parsePrice = (priceStr) => {
@@ -136,8 +136,8 @@ export default function Marketplace() {
     return `$${cleaned}`;
   };
 
-  let filteredListings = (showMyListingsOnly && userId && session) 
-    ? listings.filter(listing => isListingOwner(listing.userId))
+  let filteredListings = (showMyListingsOnly && userEmail && session) 
+    ? listings.filter(listing => isListingOwner(listing.userName))
     : listings;
 
   if (selectedCategory) {
@@ -191,14 +191,13 @@ export default function Marketplace() {
       setSubmitError('Condition is required');
       return;
     }
-    if (!listingSocialLink || !listingSocialLink.trim()) {
-      setSubmitError('GroupMe link is required');
-      return;
-    }
-    const groupMePattern = /^(https?:\/\/(web\.)?groupme\.com\/(contact\/|join_group\/)|groupme:\/\/join_group\/).+/;
-    if (!groupMePattern.test(listingSocialLink.trim())) {
-      setSubmitError('Invalid GroupMe link format. Please provide a valid GroupMe link (e.g., https://groupme.com/contact/...).');
-      return;
+    // GroupMe link is optional but validate format if provided
+    if (listingSocialLink && listingSocialLink.trim()) {
+      const groupMePattern = /^(https?:\/\/(web\.)?groupme\.com\/(contact\/|join_group\/)|groupme:\/\/join_group\/).+/;
+      if (!groupMePattern.test(listingSocialLink.trim())) {
+        setSubmitError('Invalid GroupMe link format. Please provide a valid GroupMe link (e.g., https://groupme.com/contact/...).');
+        return;
+      }
     }
     
     try {
@@ -298,7 +297,7 @@ export default function Marketplace() {
       });
       return;
     }
-    if (selectedListing && selectedListing.userId === userId) {
+    if (selectedListing && selectedListing.userName === userEmail) {
       toast({
         title: "Not allowed",
         description: "You cannot contact yourself about your own listing.",
@@ -466,15 +465,14 @@ export default function Marketplace() {
               </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="groupme">GroupMe Link *</Label>
+                <Label htmlFor="groupme">GroupMe Link</Label>
                 <Input 
                   id="groupme"
               value={listingSocialLink} 
               onChange={(e) => setListingSocialLink(e.target.value)} 
-              required
               placeholder="https://groupme.com/contact/000000/azAq9h4l"
                 />
-                <p className="text-xs text-muted-foreground">Required: Enter your GroupMe contact link</p>
+                <p className="text-xs text-muted-foreground">Recommended: Email notifications can sometimes go to spam. Adding your GroupMe link ensures buyers can reach you directly.</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="image">Upload Picture *</Label>
@@ -491,7 +489,7 @@ export default function Marketplace() {
                 )}
               </div>
             {listingImagePreview && (
-                <div className="w-full max-h-48 overflow-hidden rounded-md border">
+                <div className="w-full max-h-48 overflow-hidden rounded-xl border">
                 <img 
                   src={listingImagePreview} 
                   alt="Preview" 
@@ -500,7 +498,7 @@ export default function Marketplace() {
                 </div>
               )}
               {submitError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl">
                   <p className="text-sm text-red-600">{submitError}</p>
                 </div>
               )}
@@ -529,7 +527,7 @@ export default function Marketplace() {
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <div className="w-full h-64 md:h-96 relative rounded-lg overflow-hidden bg-muted">
+                  <div className="w-full h-64 md:h-96 relative rounded-xl overflow-hidden bg-muted">
                     {selectedListing.imageUrl && (
                       <img 
                         src={selectedListing.imageUrl} 
@@ -544,20 +542,20 @@ export default function Marketplace() {
                         <h3 className="text-sm font-medium text-muted-foreground">Description</h3>
                         <p className="text-sm">{selectedListing.description}</p>
                       </div>
-                      {selectedListing.userId !== userId && (
+                      {selectedListing.userName !== userEmail && (
                         <div className="flex flex-col sm:flex-row gap-2">
-                  {selectedListing.groupMeLink && (
+                          {selectedListing.groupMeLink && selectedListing.groupMeLink.trim() && (
                             <Button
                               variant="outline"
                               asChild
                               className="bg-[#00AFF0] hover:bg-[#0099d6] text-white border-[#00AFF0]"
                             >
                               <a
-                              href={selectedListing.groupMeLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              Contact via GroupMe
+                                href={selectedListing.groupMeLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                Contact via GroupMe
                               </a>
                             </Button>
                           )}
@@ -568,10 +566,10 @@ export default function Marketplace() {
                             Contact via Email
                           </Button>
                         </div>
-                  )}
+                      )}
                     </>
                   ) : (
-                    <div className="p-4 bg-muted/50 rounded-lg">
+                    <div className="p-4 bg-muted/50 rounded-xl">
                       <p className="text-sm text-muted-foreground">
                         <span className="font-medium text-foreground">Login required.</span> Please log in to view the description and contact the seller.
                       </p>
@@ -729,7 +727,7 @@ export default function Marketplace() {
                 className="cursor-pointer group"
                 onClick={() => handleDetailsOpen(listing)}
               >
-                <div className="relative aspect-square overflow-hidden mb-2 rounded-lg border border-border/50">
+                <div className="relative aspect-square overflow-hidden mb-2 rounded-xl border border-border/50">
                   {listing.imageUrl ? (
                     <img 
                       src={listing.imageUrl} 
@@ -744,14 +742,14 @@ export default function Marketplace() {
                   {shouldShowDeleteButton(listing) && (
                     <Button 
                       variant="destructive"
-                      size="icon"
-                      className="absolute top-2 right-2 h-7 w-7 rounded-full bg-red-500/90 hover:bg-red-600 border-0"
+                      size="sm"
+                      className="absolute top-2 right-2 h-7 px-2 rounded-lg bg-red-500/90 hover:bg-red-600 border-0 text-xs font-medium"
                       onClick={(e) => {
                         e.stopPropagation(); 
                         handleDelete(listing.id);
                       }}
                     >
-                      <X className="h-3.5 w-3.5" />
+                      Delete
                     </Button>
                   )}
                 </div>

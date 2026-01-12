@@ -6,14 +6,28 @@ const API_KEY = process.env.BACKEND_API_KEY;
 // POST /api/gus/create - Create a listing
 export async function POST(request) {
   try {
-    const formData = await request.formData();
+    const incomingFormData = await request.formData();
+
+    // Reconstruct FormData for the backend request
+    // This ensures proper serialization when forwarding to Spring
+    const outgoingFormData = new FormData();
+    for (const [key, value] of incomingFormData.entries()) {
+      if (value instanceof File) {
+        // Convert File to Blob with proper filename for Node.js fetch compatibility
+        const arrayBuffer = await value.arrayBuffer();
+        const blob = new Blob([arrayBuffer], { type: value.type });
+        outgoingFormData.append(key, blob, value.name);
+      } else {
+        outgoingFormData.append(key, value);
+      }
+    }
 
     const response = await fetch(`${BACKEND_URL}/api/v1/gus/create`, {
       method: "POST",
       headers: {
         "x-api-key": API_KEY,
       },
-      body: formData,
+      body: outgoingFormData,
     });
 
     if (!response.ok) {

@@ -9,9 +9,9 @@ export async function GET() {
     const response = await fetch(`${BACKEND_URL}/api/v1/gus`, {
       method: "GET",
       headers: {
-        "x-api-key": API_KEY,
         "Content-Type": "application/json",
       },
+      cache: "no-store", // Always fetch fresh data from backend
     });
 
     if (!response.ok) {
@@ -24,7 +24,11 @@ export async function GET() {
     }
 
     const data = await response.json();
-    return NextResponse.json(data);
+    return NextResponse.json(data, {
+      headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+      },
+    });
   } catch (error) {
     console.error("API route error:", error);
     return NextResponse.json(
