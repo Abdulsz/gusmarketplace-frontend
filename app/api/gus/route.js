@@ -10,6 +10,7 @@ export async function GET() {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "x-api-key": API_KEY,
       },
       cache: "no-store", // Always fetch fresh data from backend
     });
