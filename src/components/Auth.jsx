@@ -20,6 +20,13 @@ export default function Auth({ onAuth }) {
     setMessage('');
     try {
       if (mode === 'signup') {
+        // Validate email domain for signup
+        if (!email.toLowerCase().endsWith('@augustana.edu')) {
+          setMessage('Only @augustana.edu email addresses are allowed to create accounts.');
+          setLoading(false);
+          return;
+        }
+        
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -66,7 +73,7 @@ export default function Auth({ onAuth }) {
           {mode === 'signup' ? 'Create Account' : mode === 'reset' ? 'Reset Password' : 'Welcome Back'}
         </CardTitle>
         <CardDescription className="text-center text-muted-foreground">
-          {mode === 'signup' ? 'Sign up to start buying and selling' : mode === 'reset' ? 'Enter your email to reset your password' : 'Sign in to your account'}
+          {mode === 'signup' ? 'Sign up with your @augustana.edu email to start buying and selling' : mode === 'reset' ? 'Enter your email to reset your password' : 'Sign in to your account'}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -100,14 +107,14 @@ export default function Auth({ onAuth }) {
         )}
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">Email{mode === 'signup' && ' (@augustana.edu)'}</Label>
             <Input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="Enter your email"
+              placeholder={mode === 'signup' ? 'your.name@augustana.edu' : 'Enter your email'}
             />
           </div>
           {mode !== 'reset' && (
