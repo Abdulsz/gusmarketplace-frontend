@@ -1,4 +1,4 @@
-// File: C:\Users\Timalma Zakaria\gusfrontend\app\api\gus\contact-seller\[id]\route.js
+// File: C:\Users\death\gusmarketplace-frontend\app\api\gus\contact-seller\[id]\route.js
 import * as entry from '../../../../../../../app/api/gus/contact-seller/[id]/route.js'
 import type { NextRequest } from 'next/server.js'
 

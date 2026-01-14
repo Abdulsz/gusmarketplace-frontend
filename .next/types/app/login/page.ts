@@ -1,4 +1,4 @@
-// File: C:\Users\Timalma Zakaria\gusfrontend\app\login\page.jsx
+// File: C:\Users\death\gusmarketplace-frontend\app\login\page.jsx
 import * as entry from '../../../../app/login/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
