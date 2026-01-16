@@ -15,12 +15,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useToast } from '@/components/ui/use-toast';
 import { X, Filter, Package } from 'lucide-react';
 
-export default function Marketplace() {
+export default function Marketplace({ initialListings = [] }) {
   const { showMyListingsOnly, setShowMyListingsOnly, setOnAddListing } = useMarketplace() || {};
   const { toast } = useToast();
   
-  const [listings, setListings] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [listings, setListings] = useState(initialListings)
+  const [loading, setLoading] = useState(initialListings.length === 0)
   const [session, setSession] = useState(null)
   const [accessToken, setAccessToken] = useState('')
   const [userEmail, setUserEmail] = useState('')
@@ -93,7 +93,19 @@ export default function Marketplace() {
   }
 
   useEffect(() =>{
-    handleListingDisplay();
+    // If we have initial listings from server, refresh in background after a short delay
+    // Otherwise, fetch immediately
+    let timeoutId = null;
+    if (initialListings.length > 0) {
+      // Silently refresh in background after 1 second to ensure freshness
+      timeoutId = setTimeout(() => {
+        handleListingDisplay();
+      }, 1000);
+    } else {
+      // No initial data, fetch immediately
+      handleListingDisplay();
+    }
+    
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session ?? null)
       setAccessToken(data.session?.access_token ?? '')
@@ -108,7 +120,11 @@ export default function Marketplace() {
       setUserId(s?.user?.id ?? '')
       setListingUserName(s?.user?.email ?? '')
     })
-    return () => { sub.subscription.unsubscribe() }
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      sub.subscription.unsubscribe();
+    }
   },[]);
 
   const isAdmin = userEmail === 'mahatnitai@gmail.com';
