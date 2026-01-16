@@ -93,16 +93,9 @@ export default function Marketplace({ initialListings = [] }) {
   }
 
   useEffect(() =>{
-    // If we have initial listings from server, refresh in background after a short delay
-    // Otherwise, fetch immediately
-    let timeoutId = null;
-    if (initialListings.length > 0) {
-      // Silently refresh in background after 1 second to ensure freshness
-      timeoutId = setTimeout(() => {
-        handleListingDisplay();
-      }, 1000);
-    } else {
-      // No initial data, fetch immediately
+    // Only fetch if we don't have initial data from server
+    // The server-side fetch already provides fresh data, no need to refetch immediately
+    if (initialListings.length === 0) {
       handleListingDisplay();
     }
     
@@ -122,7 +115,6 @@ export default function Marketplace({ initialListings = [] }) {
     })
     
     return () => {
-      if (timeoutId) clearTimeout(timeoutId);
       sub.subscription.unsubscribe();
     }
   },[]);
