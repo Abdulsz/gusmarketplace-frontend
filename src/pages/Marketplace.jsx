@@ -14,12 +14,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/components/ui/use-toast';
 import { X, Package } from 'lucide-react';
 
-export default function Marketplace() {
+export default function Marketplace({ initialListings = [] }) {
   const { showMyListingsOnly, setShowMyListingsOnly, setOnAddListing } = useMarketplace() || {};
   const { toast } = useToast();
   
-  const [listings, setListings] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [listings, setListings] = useState(initialListings)
+  const [loading, setLoading] = useState(initialListings.length === 0)
   const [session, setSession] = useState(null)
   const [accessToken, setAccessToken] = useState('')
   const [userEmail, setUserEmail] = useState('')
@@ -92,7 +92,12 @@ export default function Marketplace() {
   }
 
   useEffect(() =>{
-    handleListingDisplay();
+    // Only fetch if we don't have initial data from server
+    // The server-side fetch already provides fresh data, no need to refetch immediately
+    if (initialListings.length === 0) {
+      handleListingDisplay();
+    }
+    
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session ?? null)
       setAccessToken(data.session?.access_token ?? '')
@@ -107,7 +112,10 @@ export default function Marketplace() {
       setUserId(s?.user?.id ?? '')
       setListingUserName(s?.user?.email ?? '')
     })
-    return () => { sub.subscription.unsubscribe() }
+    
+    return () => {
+      sub.subscription.unsubscribe();
+    }
   },[]);
 
   const isAdmin = userEmail === 'mahatnitai@gmail.com';
