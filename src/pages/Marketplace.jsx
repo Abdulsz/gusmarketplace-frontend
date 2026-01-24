@@ -388,7 +388,7 @@ export default function Marketplace({ initialListings = [] }) {
   };
 
   return (
-    <div className="min-h-screen bg-white pt-28 md:pt-20 pb-8 px-4 overflow-x-hidden">
+    <div className="min-h-screen bg-white py-8 px-4 overflow-x-hidden">
       <div className="max-w-7xl mx-auto w-full">
         {/* Add Listing Dialog */}
         <Dialog open={open} onOpenChange={setOpen}>
