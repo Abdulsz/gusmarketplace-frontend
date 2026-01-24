@@ -25,7 +25,7 @@ export default function AuthPage() {
   }, [router]);
 
   return (
-    <div className="min-h-[100dvh] bg-white flex flex-col items-center justify-center sm:justify-start px-3 sm:px-4 py-6 sm:pt-[12vh] sm:pb-12">
+    <div className="min-h-[100dvh] bg-white flex flex-col items-center justify-start px-3 sm:px-4 pt-[8vh] sm:pt-[12vh] pb-6 sm:pb-12">
       <div className="w-full max-w-sm sm:max-w-md space-y-4 sm:space-y-8">
         <div className="text-center space-y-1 sm:space-y-2">
           <h1 className="text-2xl sm:text-3xl font-semibold text-[#002F6C]">
