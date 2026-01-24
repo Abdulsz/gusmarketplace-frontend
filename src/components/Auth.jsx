@@ -24,7 +24,7 @@ export default function Auth({ onAuth }) {
           setLoading(false);
           return;
         }
-        
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -32,13 +32,13 @@ export default function Auth({ onAuth }) {
             emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`,
           },
         });
-        
+
         if (error) {
-          if (error.message.includes('already registered') || 
-              error.message.includes('User already registered') ||
-              error.message.includes('already exists') ||
-              error.message.includes('already been registered') ||
-              error.message.includes('email address is already')) {
+          if (error.message.includes('already registered') ||
+            error.message.includes('User already registered') ||
+            error.message.includes('already exists') ||
+            error.message.includes('already been registered') ||
+            error.message.includes('email address is already')) {
             setMessage('This email is already registered. Please sign in instead or use password reset if you forgot your password.');
           } else {
             throw error;
@@ -65,26 +65,25 @@ export default function Auth({ onAuth }) {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto bg-[#001a3d]/70 backdrop-blur-xl rounded-2xl px-8 py-8 shadow-2xl border border-white/20">
-      <div className="space-y-1 pb-6">
-        <h2 className="text-2xl font-semibold text-center text-white">
+    <div className="w-full max-w-sm sm:max-w-md mx-auto bg-[#001a3d]/70 backdrop-blur-xl rounded-xl sm:rounded-2xl px-4 sm:px-8 py-5 sm:py-8 shadow-2xl border border-white/20">
+      <div className="space-y-1 pb-4 sm:pb-6">
+        <h2 className="text-xl sm:text-2xl font-semibold text-center text-white">
           {mode === 'signup' ? 'Create Account' : mode === 'reset' ? 'Reset Password' : 'Welcome Back'}
         </h2>
-        <p className="text-center text-white/70 text-sm">
+        <p className="text-center text-white/70 text-xs sm:text-sm">
           {mode === 'signup' ? 'Sign up with your @augustana.edu email to start buying and selling' : mode === 'reset' ? 'Enter your email to reset your password' : 'Sign in to your account'}
         </p>
       </div>
       <div>
         {mode !== 'reset' && (
-          <div className="flex gap-2 mb-6">
+          <div className="flex gap-2 mb-4 sm:mb-6">
             <Button
               type="button"
               variant={mode === 'signin' ? 'default' : 'ghost'}
-              className={`flex-1 ${
-                mode === 'signin' 
-                  ? 'bg-white/15 hover:bg-white/25 text-white border-white/20' 
+              className={`flex-1 text-sm sm:text-base h-9 sm:h-10 ${mode === 'signin'
+                  ? 'bg-white/15 hover:bg-white/25 text-white border-white/20'
                   : 'text-white/70 hover:text-white hover:bg-white/10 border-white/10'
-              }`}
+                }`}
               onClick={() => {
                 setMode('signin');
                 setMessage('');
@@ -96,11 +95,10 @@ export default function Auth({ onAuth }) {
             <Button
               type="button"
               variant={mode === 'signup' ? 'default' : 'ghost'}
-              className={`flex-1 ${
-                mode === 'signup' 
-                  ? 'bg-white/15 hover:bg-white/25 text-white border-white/20' 
+              className={`flex-1 text-sm sm:text-base h-9 sm:h-10 ${mode === 'signup'
+                  ? 'bg-white/15 hover:bg-white/25 text-white border-white/20'
                   : 'text-white/70 hover:text-white hover:bg-white/10 border-white/10'
-              }`}
+                }`}
               onClick={() => {
                 setMode('signup');
                 setMessage('');
@@ -111,9 +109,9 @@ export default function Auth({ onAuth }) {
             </Button>
           </div>
         )}
-        <form onSubmit={onSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email" className="text-white/90">Email{mode === 'signup' && ' (@augustana.edu)'}</Label>
+        <form onSubmit={onSubmit} className="space-y-3 sm:space-y-4">
+          <div className="space-y-1.5 sm:space-y-2">
+            <Label htmlFor="email" className="text-white/90 text-sm sm:text-base">Email{mode === 'signup' && ' (@augustana.edu)'}</Label>
             <Input
               id="email"
               type="email"
@@ -121,12 +119,12 @@ export default function Auth({ onAuth }) {
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder={mode === 'signup' ? 'your.name@augustana.edu' : 'Enter your email'}
-              className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/40"
+              className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/40 h-9 sm:h-10 text-sm sm:text-base"
             />
           </div>
           {mode !== 'reset' && (
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-white/90">Password</Label>
+            <div className="space-y-1.5 sm:space-y-2">
+              <Label htmlFor="password" className="text-white/90 text-sm sm:text-base">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -134,24 +132,24 @@ export default function Auth({ onAuth }) {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="Enter your password"
-                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/40"
+                className="bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/40 h-9 sm:h-10 text-sm sm:text-base"
               />
             </div>
           )}
           {(mode === 'signup' || mode === 'signin') && (
-            <p className="text-xs text-white/70 text-center px-2">
+            <p className="text-[10px] sm:text-xs text-white/70 text-center px-1 sm:px-2">
               By continuing, you agree to bear full responsibility for the exchange of sold items.
             </p>
           )}
           <Button
             disabled={loading}
             type="submit"
-            className="w-full bg-white/15 hover:bg-white/25 text-white border-white/20"
+            className="w-full bg-white/15 hover:bg-white/25 text-white border-white/20 h-9 sm:h-10 text-sm sm:text-base"
           >
             {loading ? 'Please wait...' : (
-              mode === 'signup' ? 'Sign up' : 
-              mode === 'reset' ? 'Send Reset Link' : 
-              'Sign In'
+              mode === 'signup' ? 'Sign up' :
+                mode === 'reset' ? 'Send Reset Link' :
+                  'Sign In'
             )}
           </Button>
           {mode === 'signin' && (
@@ -159,7 +157,7 @@ export default function Auth({ onAuth }) {
               type="button"
               variant="ghost"
               size="sm"
-              className="w-full text-white/70 hover:text-white hover:bg-white/10 mt-2"
+              className="w-full text-white/70 hover:text-white hover:bg-white/10 mt-1 sm:mt-2 text-xs sm:text-sm h-8 sm:h-9"
               onClick={() => {
                 setMode('reset');
                 setMessage('');
@@ -174,7 +172,7 @@ export default function Auth({ onAuth }) {
               type="button"
               variant="ghost"
               size="sm"
-              className="w-full text-white/70 hover:text-white hover:bg-white/10 mt-2"
+              className="w-full text-white/70 hover:text-white hover:bg-white/10 mt-1 sm:mt-2 text-xs sm:text-sm h-8 sm:h-9"
               onClick={() => {
                 setMode('signin');
                 setMessage('');
@@ -186,16 +184,14 @@ export default function Auth({ onAuth }) {
           )}
         </form>
         {message && (
-          <div className={`mt-4 p-3 rounded-lg ${
-            message.includes('successful') || message.includes('sent') 
-              ? 'bg-white/10 border border-white/20' 
+          <div className={`mt-3 sm:mt-4 p-2 sm:p-3 rounded-lg ${message.includes('successful') || message.includes('sent')
+              ? 'bg-white/10 border border-white/20'
               : 'bg-red-500/20 border border-red-500/40'
-          }`}>
-            <p className={`text-sm ${
-              message.includes('successful') || message.includes('sent') 
-                ? 'text-white' 
-                : 'text-red-200'
             }`}>
+            <p className={`text-xs sm:text-sm ${message.includes('successful') || message.includes('sent')
+                ? 'text-white'
+                : 'text-red-200'
+              }`}>
               {message}
             </p>
           </div>
