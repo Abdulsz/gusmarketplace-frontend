@@ -14,29 +14,29 @@ export default function AuthPage() {
         router.replace('/');
       }
     });
-    
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         router.replace('/');
       }
     });
-    
+
     return () => subscription.unsubscribe();
   }, [router]);
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl font-semibold text-[#002F6C]">
+    <div className="min-h-[100dvh] bg-white flex flex-col items-center justify-start px-3 sm:px-4 pt-[8vh] sm:pt-[12vh] pb-6 sm:pb-12">
+      <div className="w-full max-w-sm sm:max-w-md space-y-4 sm:space-y-8">
+        <div className="text-center space-y-1 sm:space-y-2">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-[#002F6C]">
             GUS Marketplace
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Augustana College Student Marketplace
           </p>
         </div>
         <Auth onAuth={() => router.push('/')} />
-        <div className="text-center space-y-3 pt-4">
+        <div className="text-center space-y-2 sm:space-y-3 pt-2 sm:pt-4">
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <span className="w-full border-t border-border/50" />
@@ -48,7 +48,7 @@ export default function AuthPage() {
           <Button
             variant="ghost"
             onClick={() => router.push('/')}
-            className="w-full text-muted-foreground hover:text-foreground"
+            className="w-full text-muted-foreground hover:text-foreground text-sm sm:text-base"
           >
             Continue as Guest
           </Button>

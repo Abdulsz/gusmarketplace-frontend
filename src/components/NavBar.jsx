@@ -59,7 +59,7 @@ export default function NavBar() {
   const NavButtons = () => (
     <>
       {isMarketplacePage && setShowMyListingsOnly && showMyListingsOnly && (
-        <Button 
+        <Button
           variant="ghost"
           onClick={() => setShowMyListingsOnly(false)}
           className="text-xs h-7 rounded-lg px-2.5 text-white/70 hover:text-white hover:bg-white/10 whitespace-nowrap"
@@ -68,20 +68,19 @@ export default function NavBar() {
         </Button>
       )}
       {isMarketplacePage && setShowMyListingsOnly && (
-        <Button 
+        <Button
           variant="ghost"
           onClick={handleMyListingsClick}
-          className={`text-xs h-7 rounded-lg px-2.5 whitespace-nowrap ${
-            showMyListingsOnly 
-              ? 'text-white bg-white/15 hover:bg-white/25' 
+          className={`text-xs h-7 rounded-lg px-2.5 whitespace-nowrap ${showMyListingsOnly
+              ? 'text-white bg-white/15 hover:bg-white/25'
               : 'text-white/70 hover:text-white hover:bg-white/10'
-          }`}
+            }`}
         >
           My Listings
         </Button>
       )}
       {isMarketplacePage && onAddListing && (
-        <Button 
+        <Button
           variant="ghost"
           onClick={handleAddListingClick}
           className="text-xs text-white hover:text-white bg-white/15 hover:bg-white/25 h-7 rounded-lg px-2.5 whitespace-nowrap"
@@ -90,7 +89,7 @@ export default function NavBar() {
         </Button>
       )}
       {!loggedIn && !isLoginPage && (
-        <Button 
+        <Button
           onClick={() => router.push('/login')}
           variant="ghost"
           className="text-xs h-7 rounded-lg px-2.5 text-white/70 hover:text-white hover:bg-white/10 whitespace-nowrap"
@@ -99,7 +98,7 @@ export default function NavBar() {
         </Button>
       )}
       {loggedIn && (
-        <Button 
+        <Button
           variant="ghost"
           onClick={handleLogout}
           className="text-xs h-7 rounded-lg px-2.5 text-white/70 hover:text-white hover:bg-white/10 whitespace-nowrap"
@@ -114,7 +113,7 @@ export default function NavBar() {
   const DesktopNavButtons = () => (
     <>
       {isMarketplacePage && setShowMyListingsOnly && showMyListingsOnly && (
-        <Button 
+        <Button
           variant="ghost"
           onClick={() => setShowMyListingsOnly(false)}
           className="text-sm h-8 rounded-xl px-4 text-white/70 hover:text-white hover:bg-white/10"
@@ -123,20 +122,19 @@ export default function NavBar() {
         </Button>
       )}
       {isMarketplacePage && setShowMyListingsOnly && (
-        <Button 
+        <Button
           variant="ghost"
           onClick={handleMyListingsClick}
-          className={`text-sm h-8 rounded-xl px-4 ${
-            showMyListingsOnly 
-              ? 'text-white bg-white/15 hover:bg-white/25' 
+          className={`text-sm h-8 rounded-xl px-4 ${showMyListingsOnly
+              ? 'text-white bg-white/15 hover:bg-white/25'
               : 'text-white/70 hover:text-white hover:bg-white/10'
-          }`}
+            }`}
         >
           My Listings
         </Button>
       )}
       {isMarketplacePage && onAddListing && (
-        <Button 
+        <Button
           variant="ghost"
           onClick={handleAddListingClick}
           className="text-sm text-white hover:text-white bg-white/15 hover:bg-white/25 h-8 rounded-xl px-4"
@@ -145,7 +143,7 @@ export default function NavBar() {
         </Button>
       )}
       {!loggedIn && !isLoginPage && (
-        <Button 
+        <Button
           onClick={() => router.push('/login')}
           variant="ghost"
           className="text-sm h-8 rounded-xl px-4 text-white/70 hover:text-white hover:bg-white/10"
@@ -154,7 +152,7 @@ export default function NavBar() {
         </Button>
       )}
       {loggedIn && (
-        <Button 
+        <Button
           variant="ghost"
           onClick={handleLogout}
           className="text-sm h-8 rounded-xl px-4 text-white/70 hover:text-white hover:bg-white/10"
@@ -199,7 +197,7 @@ export default function NavBar() {
               </button>
             </div>
           </div>
-          
+
           <nav className="hidden md:block fixed top-3 left-1/2 -translate-x-1/2 z-50">
             <div className="bg-[#001a3d]/70 backdrop-blur-xl rounded-[32px] px-6 py-3 shadow-2xl border border-white/20 relative">
               <div className="flex items-center gap-3 relative z-10">
