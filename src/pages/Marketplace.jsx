@@ -11,9 +11,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/components/ui/use-toast';
-import { X, Filter, Package } from 'lucide-react';
+import { X, Package } from 'lucide-react';
 
 export default function Marketplace({ initialListings = [] }) {
   const { showMyListingsOnly, setShowMyListingsOnly, setOnAddListing } = useMarketplace() || {};
@@ -660,39 +659,55 @@ export default function Marketplace({ initialListings = [] }) {
                 <X className="h-3 w-3 cursor-pointer" onClick={() => setPriceSort('none')} />
               </Badge>
             )}
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
-                <Filter className="h-4 w-4" />
-                Filter
+            {(selectedCategory || priceSort !== 'none') && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedCategory('');
+                  setPriceSort('none');
+                }}
+                className="text-xs text-muted-foreground hover:text-foreground"
+              >
+                Clear All
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onClick={() => {
-              setSelectedCategory('');
-              setPriceSort('none');
-              }}>
-                Clear All Filters
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => {
-                const categories = ['Electronics', 'Furniture', 'Clothing', 'Books', 'Other'];
-                const currentIndex = categories.indexOf(selectedCategory);
-                const nextCategory = currentIndex === -1 ? categories[0] : categories[(currentIndex + 1) % categories.length];
-                setSelectedCategory(nextCategory);
-              }}>
-                Category: {selectedCategory || 'All'}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {
-                if (priceSort === 'none') setPriceSort('high');
-                else if (priceSort === 'high') setPriceSort('low');
-                else setPriceSort('none');
-              }}>
-                Price: {priceSort === 'high' ? 'High to Low' : priceSort === 'low' ? 'Low to High' : 'None'}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            )}
+          </div>
+          <div className="flex gap-3 items-center">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="category-filter" className="text-sm text-muted-foreground whitespace-nowrap">
+                Category:
+              </Label>
+              <Select value={selectedCategory || 'all'} onValueChange={(value) => setSelectedCategory(value === 'all' ? '' : value)}>
+                <SelectTrigger id="category-filter" className="w-[140px]">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="Electronics">Electronics</SelectItem>
+                  <SelectItem value="Furniture">Furniture</SelectItem>
+                  <SelectItem value="Clothing">Clothing</SelectItem>
+                  <SelectItem value="Books">Books</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="price-sort" className="text-sm text-muted-foreground whitespace-nowrap">
+                Sort by Price:
+              </Label>
+              <Select value={priceSort} onValueChange={setPriceSort}>
+                <SelectTrigger id="price-sort" className="w-[140px]">
+                  <SelectValue placeholder="None" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="low">Low to High</SelectItem>
+                  <SelectItem value="high">High to Low</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
 
         {/* Listings Grid */}
