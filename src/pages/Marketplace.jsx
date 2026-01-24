@@ -389,8 +389,8 @@ export default function Marketplace({ initialListings = [] }) {
   };
 
   return (
-    <div className="min-h-screen bg-white py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-white py-8 px-4 overflow-x-hidden">
+      <div className="max-w-7xl mx-auto w-full">
         {/* Add Listing Dialog */}
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-0 shadow-xl">
@@ -646,7 +646,7 @@ export default function Marketplace({ initialListings = [] }) {
         </Dialog>
 
       {/* Filter Section */}
-        <div className="mb-8 flex justify-between items-center">
+        <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex gap-2 flex-wrap">
             {selectedCategory && (
               <Badge variant="secondary" className="gap-1">
@@ -697,9 +697,9 @@ export default function Marketplace({ initialListings = [] }) {
 
         {/* Listings Grid */}
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="space-y-2">
+              <div key={i} className="space-y-2 min-w-0">
                 <Skeleton className="aspect-square w-full" />
                 <Skeleton className="h-4 w-3/4" />
                 <Skeleton className="h-4 w-1/2" />
@@ -728,11 +728,11 @@ export default function Marketplace({ initialListings = [] }) {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
             {filteredListings.map((listing) => (
               <div 
                 key={listing.id} 
-                className="cursor-pointer group"
+                className="cursor-pointer group min-w-0"
                 onClick={() => handleDetailsOpen(listing)}
               >
                 <div className="relative aspect-square overflow-hidden mb-2 rounded-xl border border-border/50">

@@ -1,12 +1,12 @@
 import './globals.css';
-import { Roboto } from 'next/font/google';
+import { Manrope } from 'next/font/google';
 import NavBar from '@/components/NavBar';
 import { MarketplaceProvider } from '@/contexts/MarketplaceContext';
 import { Toaster } from '@/components/ui/toaster';
 import { Analytics } from '@vercel/analytics/next';
 
-const roboto = Roboto({
-  weight: ['300', '400', '500', '700'],
+const manrope = Manrope({
+  weight: ['300', '400', '500', '600', '700', '800'],
   subsets: ['latin'],
   display: 'swap',
 });
@@ -19,7 +19,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={roboto.className}>
+      <body className={manrope.className}>
         <MarketplaceProvider>
           {children}
           <NavBar />
